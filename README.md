@@ -1,2 +1,0 @@
-# hydroponics
-Hydroponics rack project
