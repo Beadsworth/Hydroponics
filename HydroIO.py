@@ -151,7 +151,7 @@ def interpret_response(response_bytes):
     if (response_bytes[0] == START_PACKET[0]) and (response_bytes[1] == COMMAND_PACKET[0]) and (
                 response_bytes[4] == END_PACKET[0]):  # command report
         if (response_bytes[3] == bytes.fromhex('00')[0]) or (response_bytes[3] == bytes.fromhex('01')[0]):  # good state
-            print("Pin " + str(response_bytes[2]) + " in state " + str(response_bytes[3]) + "\n")
+            # print("Pin " + str(response_bytes[2]) + " in state " + str(response_bytes[3]) + "\n")
             return True, response_bytes[3]  # request has finished and pin state is returned
         else:  # bad state
             print("Bad pin state!\n")

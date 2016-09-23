@@ -49,26 +49,37 @@ zone5 = Zone("ZONE5", zone5_valve, inlet_valve, outlet_valve, pump)
 zone6 = Zone("ZONE6", zone6_valve, inlet_valve, outlet_valve, pump)
 
 
-def close_all_valves():
-    inlet_valve.close()
-    zone1_valve.close()
-    zone2_valve.close()
-    zone3_valve.close()
-    zone4_valve.close()
-    zone5_valve.close()
-    zone6_valve.close()
-    outlet_valve.close()
+pump_tuple = (
+    pump,
+)
+
+light_tuple = (
+    light1,
+    # light2,
+)
+
+valve_tuple = (
+    inlet_valve,
+    zone1_valve,
+    zone2_valve,
+    zone3_valve,
+    zone4_valve,
+    zone5_valve,
+    zone6_valve,
+    outlet_valve,
+)
+
+load_tuple = pump_tuple + light_tuple + valve_tuple
 
 
-def open_all_valves():
-    inlet_valve.open()
-    zone1_valve.open()
-    zone2_valve.open()
-    zone3_valve.open()
-    zone4_valve.open()
-    zone5_valve.open()
-    zone6_valve.open()
-    outlet_valve.open()
+zone_tuple = (
+    zone1,
+    zone2,
+    zone3,
+    zone4,
+    zone5,
+    zone6,
+)
 
 
 if __name__ == '__main__':
