@@ -6,17 +6,17 @@ import time
 from HydroLoads import light_high_str, sublight_off_str, sublight_on_str, light_low_str, light_off_str, pump_off_str, pump_on_str, \
     valve_closed_str, valve_open_str
 
-from LoadList import pump, inlet_valve, zone1_valve, zone2_valve, zone3_valve, zone4_valve, zone5_valve, \
+from LoadList import pump1, inlet_valve, zone1_valve, zone2_valve, zone3_valve, zone4_valve, zone5_valve, \
     zone6_valve, outlet_valve, sublight_1A, sublight_1B, sublight_2A, sublight_2B, light1, light2, \
     zone1, zone2, zone3,zone4, zone5, zone6, close_all_valves, open_all_valves
 
 
 def flicker_all():
-    pump.set_mode(pump_on_str)
+    pump1.set_mode(pump_on_str)
     open_all_valves()
     light1.set_mode(light_high_str)
 
-    pump.set_mode(pump_off_str)
+    pump1.set_mode(pump_off_str)
     close_all_valves()
     light1.set_mode(light_off_str)
 
@@ -121,7 +121,7 @@ class TestHydroZone:
 # @unittest.skip("Skipping TestPump Class...")
 class TestPump(unittest.TestCase, TestHydroLoad):
 
-    load = pump
+    load = pump1
 
 
 # @unittest.skip("Skipping TestInletValve Class...")
@@ -318,12 +318,12 @@ class TestSimplifiedMethods(unittest.TestCase):
 
     def test_pump_simplified_methods(self):
 
-        pump.on()
-        pump.on()
-        pump.off()
-        pump.off()
-        pump.on()
-        pump.off()
+        pump1.on()
+        pump1.on()
+        pump1.off()
+        pump1.off()
+        pump1.on()
+        pump1.off()
 
     def test_valve_simplified_methods(self):
 

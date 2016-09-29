@@ -1,41 +1,38 @@
 import datetime
 import copy
-from LoadList import pump_tuple, light_tuple, valve_tuple, load_tuple, zone_tuple
-
-
-def close_all_valves():
-
-    for valve in valve_tuple:
-        valve.close()
-
-
-def open_all_valves():
-
-    for valve in valve_tuple:
-        valve.open()
-
-
-def shutdown_all():
-
-    close_all_valves()
-
-    for pump in pump_tuple:
-        pump.off()
-
-    for light in light_tuple:
-        light.off()
 
 
 class Task:
     # TODO add repeat flag; some tasks should be repeated daily
-    def __init__(self, exe_time, function, *args):
+    def __init__(self, exe_time, repeat, function, *args):
+
+        if not isinstance(exe_time, datetime.time):
+            raise TypeError('Must be datetime.time object')
 
         # TODO add ability to initiate from string
+        # exec_time should be datetime.time object
+        # repeat -> True or False
         self.exe_time = exe_time
+        self.repeat = repeat
         self.function = function
         self.args = args
+    # TODO more tests on __str__ and __repr__
+    def __repr__(self):
+        arg_str = ''
+        for item in self.args:
+            if isinstance(item, str):
+                arg_str += (', \'' + item + '\'')
+            else:
+                arg_str += (', ' + str(item))
 
-    def write_task(self):
+        return 'Task(%s, %s, %s%s)' \
+               % (repr(self.exe_time), repr(self.repeat), self.function.__name__, arg_str)
+
+    def __str__(self):
+        return 'exe_time: %s, repeat: %s, function: %s, args: %s' \
+               % (str(self.exe_time)[:8], repr(self.repeat), self.function.__name__, [str(item) for item in self.args])
+
+    def task_str(self):
         # return string to write to txt file
         pass
 
@@ -43,6 +40,7 @@ class Task:
         """Will do task immediately when called.  Waiting implemented in TaskQueue"""
 
         status = self.function(*self.args)
+        return status
 
 
 class TaskQueue:
@@ -56,7 +54,7 @@ class TaskQueue:
         # for task in schedule.txt:
             # self.queue.append(task)
 
-        self.refresh()
+        # self.refresh()
 
     def catch_up(self):
         """Find index of next task and start queue there.  If current time greater than all tasks,
@@ -90,34 +88,54 @@ class TaskQueue:
 
     def add_task(self, task):
 
-        self.queue.append(task)
-        self.length += 1
-        self.refresh()
+        temp_index = 0
 
-    def remove_task(self):
-        pass
+        if self.length > 0:  # if length == 0, just append to empty queue
+
+            for i in range(self.length):
+                if task.exe_time.second < self.queue[temp_index].exe_time.second:
+                    break
+                temp_index += 1
+
+        self.queue.insert(temp_index, task)
+        self.length += 1
+        # self.refresh()
+
+    def remove_task(self, index):
+        del self.queue[index]
+        self.length -= 1
 
     def refresh(self):
-        """Sort queue and create new iterator.  Catch up to current time."""
+        """Sort queue and catch up to current time."""
         self.queue.sort(key=lambda x: x.exe_time)
         self.catch_up()
 
     def run(self):
+    # TODO figure out return status
+        status = None
 
-        # self.catch_up()
         if self.length == 0:
-            return False
+            return status
 
+        # if queue just initialized, current_task should be None.  catch_up if current_task is None
+        if self.current_task is None:
+            self.catch_up()
+
+        # by this point, queue has at least one task
         first_task = self.queue[0]
         now = datetime.datetime.now().time().second
         if now >= self.current_task.exe_time.second:
 
             if (self.index == 0) and (now > first_task.exe_time.second):  # if end of day, skip task
-                return False
+                return status
 
-            print('Index: ' + str(self.index))
-            self.current_task.do()
-            self.index += 1
+            # print('Index: ' + str(self.index))
+            status = self.current_task.do()
+
+            if self.current_task.repeat is False:  # if no repeat, remove task and don't change index
+                self.remove_task(self.index)
+            else:
+                self.index += 1
 
             if self.index >= self.length:
                 self.catch_up()
@@ -126,4 +144,4 @@ class TaskQueue:
 
             self.current_task = self.queue[self.index]
 
-        return False
+        return status

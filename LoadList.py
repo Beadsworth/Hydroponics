@@ -22,7 +22,7 @@ ZONE6_VALVE_PIN = 9
 OUTLET_VALVE_PIN = 10
 
 # initialize Loads
-pump = Pump(PUMP_PIN)
+pump1 = Pump(PUMP_PIN)
 # lights
 sublight_1A = Sublight(LIGHT1A_PIN)
 sublight_1B = Sublight(LIGHT1B_PIN)
@@ -41,16 +41,16 @@ zone5_valve = Valve(ZONE5_VALVE_PIN)
 zone6_valve = Valve(ZONE6_VALVE_PIN)
 outlet_valve = Valve(OUTLET_VALVE_PIN)
 # initialize Zones
-zone1 = Zone("ZONE1", zone1_valve, inlet_valve, outlet_valve, pump)
-zone2 = Zone("ZONE2", zone2_valve, inlet_valve, outlet_valve, pump)
-zone3 = Zone("ZONE3", zone3_valve, inlet_valve, outlet_valve, pump)
-zone4 = Zone("ZONE4", zone4_valve, inlet_valve, outlet_valve, pump)
-zone5 = Zone("ZONE5", zone5_valve, inlet_valve, outlet_valve, pump)
-zone6 = Zone("ZONE6", zone6_valve, inlet_valve, outlet_valve, pump)
+zone1 = Zone("ZONE1", zone1_valve, inlet_valve, outlet_valve, pump1)
+zone2 = Zone("ZONE2", zone2_valve, inlet_valve, outlet_valve, pump1)
+zone3 = Zone("ZONE3", zone3_valve, inlet_valve, outlet_valve, pump1)
+zone4 = Zone("ZONE4", zone4_valve, inlet_valve, outlet_valve, pump1)
+zone5 = Zone("ZONE5", zone5_valve, inlet_valve, outlet_valve, pump1)
+zone6 = Zone("ZONE6", zone6_valve, inlet_valve, outlet_valve, pump1)
 
 
 pump_tuple = (
-    pump,
+    pump1,
 )
 
 light_tuple = (
@@ -80,6 +80,29 @@ zone_tuple = (
     zone5,
     zone6,
 )
+
+
+def close_all_valves():
+
+    for valve in valve_tuple:
+        valve.close()
+
+
+def open_all_valves():
+
+    for valve in valve_tuple:
+        valve.open()
+
+
+def shutdown_all():
+
+    close_all_valves()
+
+    for pump in pump_tuple:
+        pump.off()
+
+    for light in light_tuple:
+        light.off()
 
 
 if __name__ == '__main__':
