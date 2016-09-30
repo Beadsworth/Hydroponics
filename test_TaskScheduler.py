@@ -73,6 +73,45 @@ class TestTaskScheduler(unittest.TestCase):
                 temp_sec = current_sec
                 secs_left -= 1
 
+    def test_task_str(self):
+        task1 = Task(datetime.datetime.now().time(), True, beep, 'G5')
+        print(repr(task1))
+
+    def test_read_write_queue(self):
+
+        filename_str = 'test_queue.txt'
+
+        time1 = datetime.time(hour=12, minute=00, second=0)
+        time2 = datetime.time(hour=12, minute=00, second=10)
+        time3 = datetime.time(hour=12, minute=00, second=20)
+        time4 = datetime.time(hour=12, minute=00, second=30)
+        time5 = datetime.time(hour=12, minute=00, second=40)
+        time6 = datetime.time(hour=12, minute=00, second=50)
+
+        task1 = Task(time1, True, beep, 'C5')
+        task2 = Task(time1, True, beep, 'D5')
+        task3 = Task(time2, True, beep, 'E5')
+        task4 = Task(time3, True, beep, 'F5')
+        task5 = Task(time4, True, beep, 'G5')
+        task6 = Task(time5, True, beep, 'A5')
+        task7 = Task(time6, False, beep_scale)
+
+        sched = TaskQueue()
+        sched.add_task(task7)
+        sched.add_task(task6)
+        sched.add_task(task5)
+        sched.add_task(task4)
+        sched.add_task(task3)
+        sched.add_task(task2)
+        sched.add_task(task1)
+
+        sched.filename_str = 'test_queue.txt'
+        sched.write_queue()
+
+        new_queue = TaskQueue(filename_str)
+
+        pass
+
 
 if __name__ == '__main__':
     unittest.main()

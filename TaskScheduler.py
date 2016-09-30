@@ -1,5 +1,8 @@
 import datetime
 import copy
+from pathlib import Path
+from Beep import beep, beep_scale
+# TODO remove beep, fix eval
 
 
 class Task:
@@ -16,6 +19,7 @@ class Task:
         self.repeat = repeat
         self.function = function
         self.args = args
+
     # TODO more tests on __str__ and __repr__
     def __repr__(self):
         arg_str = ''
@@ -43,18 +47,26 @@ class Task:
         return status
 
 
+def task_from_str(input_string):
+    # TODO fix eval() vulnerability
+    # expected format ---> Task(datetime.time(1, 1, 1), True, beep, 'G5', 1)
+    return eval(input_string)
+
+
 class TaskQueue:
 
-    def __init__(self):
+    def __init__(self, filename_str='TaskQueue.txt'):
+        self.filename_str = filename_str
         self.queue = []
         self.index = -1
         self.length = 0
         self.current_task = None
 
-        # for task in schedule.txt:
-            # self.queue.append(task)
-
-        # self.refresh()
+        if Path('./' + self.filename_str).is_file():  # if file exists
+            with open(self.filename_str, 'r') as sched_file:
+                for line in sched_file:
+                    single_task = task_from_str(line[:-1])
+                    self.add_task(single_task)
 
     def catch_up(self):
         """Find index of next task and start queue there.  If current time greater than all tasks,
@@ -111,7 +123,9 @@ class TaskQueue:
         self.catch_up()
 
     def run(self):
-    # TODO figure out return status
+        # TODO figure out return status
+        # TODO log each action
+
         status = None
 
         if self.length == 0:
@@ -132,6 +146,7 @@ class TaskQueue:
             # print('Index: ' + str(self.index))
             status = self.current_task.do()
 
+            # TODO remove task from txt file if repeat is False
             if self.current_task.repeat is False:  # if no repeat, remove task and don't change index
                 self.remove_task(self.index)
             else:
@@ -145,3 +160,11 @@ class TaskQueue:
             self.current_task = self.queue[self.index]
 
         return status
+
+    def write_queue(self):
+
+        if self.filename_str is None:
+            raise RuntimeError('This TaskQueue has no txt-file!')
+        with open(self.filename_str, 'w') as sched_file:
+            for task in self.queue:
+                sched_file.write(repr(task) + '\n')
