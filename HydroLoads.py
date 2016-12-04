@@ -36,7 +36,7 @@ light_modes_rev = {str(2): light_off_str, str(1): light_low_str, str(0): light_h
 
 class Controller:
     """Board that controls components.  Each board needs its own session.  First initialize controller, then components,
-    then connect."""
+    then connect.  Extedns pyFirmata's 'board' class."""
     def __init__(self, board_addr):
         self.board_addr = board_addr
         self.board = None
@@ -107,8 +107,6 @@ class Controller:
             self.board.digital[load.pin].write(RELAY_OPEN)
 
 
-
-# TODO change everything to pin#-type setting.  Let higher abstraction module handle load->number mapping
 class Component:
     """Superclass, mostly to prevent adding/removing components while Controller is active."""
     def __init__(self, controller, pin):

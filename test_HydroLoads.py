@@ -60,6 +60,7 @@ class TestController(unittest.TestCase):
         uno.disconnect()
 
     def setUp(self):
+        uno.connect()
         uno.all_loads_off()
 
     def tearDown(self):
@@ -87,6 +88,33 @@ class TestController(unittest.TestCase):
 
 
 # @unittest.skip("Skipping TestLight Class...")
+class TestLoad(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        uno.connect()
+
+    @classmethod
+    def tearDownClass(cls):
+        uno.disconnect()
+
+    def setUp(self):
+        uno.connect()
+        uno.all_loads_off()
+
+    def tearDown(self):
+        buzz(100, 0.5)
+
+    # @unittest.skip("Skipping test")
+    def test_add_load(self):
+        uno.disconnect()
+
+        temp1 = Component(uno, 13)
+        temp2 = Component(uno, 13)
+
+        uno.connect()
+
+
+# @unittest.skip("Skipping TestLight Class...")
 class TestLight(unittest.TestCase):
 
     @classmethod
@@ -98,6 +126,7 @@ class TestLight(unittest.TestCase):
         uno.disconnect()
 
     def setUp(self):
+        uno.connect()
         uno.all_loads_off()
 
     def tearDown(self):
