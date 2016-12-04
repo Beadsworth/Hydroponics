@@ -3,233 +3,109 @@
 import unittest
 import time
 
-from HydroLoads import light_high_str, sublight_off_str, sublight_on_str, light_low_str, light_off_str, pump_off_str, pump_on_str, \
-    valve_closed_str, valve_open_str
+from HydroLoads import *
 
-from LoadList import pump1, inlet_valve, zone1_valve, zone2_valve, zone3_valve, zone4_valve, zone5_valve, \
-    zone6_valve, outlet_valve, sublight_1A, sublight_1B, sublight_2A, sublight_2B, light1, light2, \
-    zone1, zone2, zone3,zone4, zone5, zone6, close_all_valves, open_all_valves
+addr = '/dev/ttyACM0'
+uno = Controller(addr)
+led_red = Sublight(uno, 2)
+led_yellow = Sublight(uno, 3)
+led_green = Sublight(uno, 4)
+led_blue = Sublight(uno, 5)
+led_white1 = Sublight(uno, 6)
+led_white2 = Sublight(uno, 7)
+
+led_list = [led_red, led_yellow, led_green, led_blue, led_white1, led_white2]
+
+buzzer = Load(uno, 8)
+
+sublight_1A = led_white1
+sublight_1B = led_white2
+sublight_2A = led_green
+sublight_2B = led_blue
+light1 = Light(sublight_1A, sublight_1B)
+light2 = Light(sublight_2A, sublight_2B)
 
 
-def flicker_all():
-    pump1.set_mode(pump_on_str)
-    open_all_valves()
-    light1.set_mode(light_high_str)
+def buzz(Hz, sec):
 
-    pump1.set_mode(pump_off_str)
-    close_all_valves()
-    light1.set_mode(light_off_str)
+    start = time.time()
+    now = time.time()
+    try:
+        while now - start < sec:
+            buzzer.high()
+            time.sleep(1 / Hz)
+            buzzer.low()
+            time.sleep(1 / Hz)
+            now = time.time()
+    finally:
+        buzzer.low()
 
 
 # @unittest.skip("Skipping TestPump Class...")
 class TestSanity(unittest.TestCase):
 
     def test_sanity(self):
+        pass
 
-        time.sleep(3)
 
+# @unittest.skip("Skipping TestLight Class...")
+class TestController(unittest.TestCase):
 
-class TestHydroLoad:
+    @classmethod
+    def setUpClass(cls):
+        uno.connect()
 
-    def __init__(self):
+    @classmethod
+    def tearDownClass(cls):
+        uno.disconnect()
 
-        self.load = None
+    def setUp(self):
+        uno.all_loads_off()
 
-    def test_load(self):
+    def tearDown(self):
+        buzz(100, 0.5)
 
-        all_modes = {
-            pump_off_str: 0,
-            pump_on_str: 0,
-            valve_closed_str: 0,
-            valve_open_str: 0,
-            sublight_off_str: 0,
-            sublight_on_str: 0,
-            '0': 0,
-            '1': 1,
-            '229': 229,
-            'ON': 1,
-            'OFF': 0,
-            'hello': 0
-        }
+    # @unittest.skip("Skipping test")
+    def test_reconnect(self):
+        uno.reconnect()
 
-        good_modes = self.load.mode_dict
-        bad_modes = all_modes.copy()
+    def test_adding_when_connected(self):
+        with self.assertRaises(RuntimeError):
+            temp = Component(uno, 13)
 
-        for mode in good_modes:
-            del bad_modes[mode]
+        with self.assertRaises(RuntimeError):
+            temp = Load(uno, 13)
 
-        status0 = self.load.get_mode()
-        status0 = self.load.get_mode()
-        self.assertTrue(self.load.mode_dict[status0] is 0 or self.load.mode_dict[status0] is 1)
+        with self.assertRaises(RuntimeError):
+            temp = Valve(uno, 13)
 
-        for mode in bad_modes:
-            with self.assertRaises(ValueError):
-                self.load.set_mode(mode)
-                self.load.set_mode(mode)
+        with self.assertRaises(RuntimeError):
+            temp = Pump(uno, 13)
 
-        for mode in good_modes:
-            status1 = self.load.set_mode(mode)
-            status2 = self.load.set_mode(mode)
-            self.assertIsNone(status1)
-            self.assertIsNone(status2)
-            status3 = self.load.get_mode()
-            self.assertEqual(self.load.mode_dict[status3], self.load.mode_dict[mode])
+        with self.assertRaises(RuntimeError):
+            temp = Sublight(uno, 13)
 
 
-class TestHydroZone:
-
-    def __init__(self):
-
-        self.zone = None
-
-    def test_zone(self):
-
-        pause_sec = 0
-
-        # flicker_all()
-        time.sleep(pause_sec)
-        # fill check
-        self.zone.fill()
-        time.sleep(pause_sec)
-        self.assertTrue(self.zone.control_valve.get_mode() == valve_open_str)
-        self.assertTrue(self.zone.inlet_valve.get_mode() == valve_open_str)
-        self.assertTrue(self.zone.outlet_valve.get_mode() == valve_closed_str)
-        self.assertTrue(self.zone.pump.get_mode() == pump_on_str)
-        # maintain check
-        self.zone.maintain()
-        time.sleep(pause_sec)
-        self.assertTrue(self.zone.control_valve.get_mode() == valve_closed_str)
-        self.assertTrue(self.zone.inlet_valve.get_mode() == valve_closed_str)
-        self.assertTrue(self.zone.outlet_valve.get_mode() == valve_closed_str)
-        self.assertTrue(self.zone.pump.get_mode() == pump_off_str)
-        # drain check
-        self.zone.drain()
-        time.sleep(pause_sec)
-        self.assertTrue(self.zone.control_valve.get_mode() == valve_open_str)
-        self.assertTrue(self.zone.inlet_valve.get_mode() == valve_closed_str)
-        self.assertTrue(self.zone.outlet_valve.get_mode() == valve_open_str)
-        self.assertTrue(self.zone.pump.get_mode() == pump_off_str)
-        # maintain check
-        self.zone.maintain()
-        time.sleep(pause_sec)
-        self.assertTrue(self.zone.control_valve.get_mode() == valve_closed_str)
-        self.assertTrue(self.zone.inlet_valve.get_mode() == valve_closed_str)
-        self.assertTrue(self.zone.outlet_valve.get_mode() == valve_closed_str)
-        self.assertTrue(self.zone.pump.get_mode() == pump_off_str)
-
-
-# @unittest.skip("Skipping TestPump Class...")
-class TestPump(unittest.TestCase, TestHydroLoad):
-
-    load = pump1
-
-
-# @unittest.skip("Skipping TestInletValve Class...")
-class TestInletValve(unittest.TestCase, TestHydroLoad):
-
-    load = inlet_valve
-
-
-# @unittest.skip("Skipping TestZone1Valve Class...")
-class TestZone1Valve(unittest.TestCase, TestHydroLoad):
-
-    load = zone1_valve
-
-
-# @unittest.skip("Skipping TestZone2Valve  Class...")
-class TestZone2Valve(unittest.TestCase, TestHydroLoad):
-    load = zone2_valve
-
-
-# @unittest.skip("Skipping TestZone3Valve  Class...")
-class TestZone3Valve(unittest.TestCase, TestHydroLoad):
-    load = zone3_valve
-
-
-# @unittest.skip("Skipping TestZone4Valve  Class...")
-class TestZone4Valve(unittest.TestCase, TestHydroLoad):
-    load = zone4_valve
-
-
-# @unittest.skip("Skipping TestZone5Valve  Class...")
-class TestZone5Valve(unittest.TestCase, TestHydroLoad):
-    load = zone5_valve
-
-
-# @unittest.skip("Skipping TestZone6Valve  Class...")
-class TestZone6Valve(unittest.TestCase, TestHydroLoad):
-    load = zone6_valve
-
-
-# @unittest.skip("Skipping TestOutletValve  Class...")
-class TestOutletValve(unittest.TestCase, TestHydroLoad):
-
-    load = outlet_valve
-
-
-# @unittest.skip("Skipping TestSublight1A  Class...")
-class TestSublight1A(unittest.TestCase, TestHydroLoad):
-
-    load = sublight_1A
-
-
-# @unittest.skip("Skipping TestSublight1B  Class...")
-class TestSublight1B(unittest.TestCase, TestHydroLoad):
-
-    load = sublight_1B
-
-
-# @unittest.skip("Skipping TestZone1 Class...")
-class TestZone1(unittest.TestCase, TestHydroZone):
-
-    zone = zone1
-
-
-# @unittest.skip("Skipping TestZone2 Class...")
-class TestZone2(unittest.TestCase, TestHydroZone):
-
-    zone = zone2
-
-
-# @unittest.skip("Skipping TestZone3 Class...")
-class TestZone3(unittest.TestCase, TestHydroZone):
-
-    zone = zone3
-
-
-# @unittest.skip("Skipping TestZone4 Class...")
-class TestZone4(unittest.TestCase, TestHydroZone):
-
-    zone = zone4
-
-
-# @unittest.skip("Skipping TestZone5 Class...")
-class TestZone5(unittest.TestCase, TestHydroZone):
-
-    zone = zone5
-
-
-# @unittest.skip("Skipping TestZone6 Class...")
-class TestZone6(unittest.TestCase, TestHydroZone):
-
-    zone = zone6
-
-
-# @unittest.skip("Skipping TestZone6 Class...")
+# @unittest.skip("Skipping TestLight Class...")
 class TestLight(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        uno.connect()
 
-        time.sleep(5)
+    @classmethod
+    def tearDownClass(cls):
+        uno.disconnect()
 
     def setUp(self):
+        uno.all_loads_off()
 
-        flicker_all()
+    def tearDown(self):
+        buzz(100, 0.5)
 
     def test_light1(self):  # high -> low -> off, twice
 
-        pause_time = 0
+        pause_time = 0.5
 
         for i in range(2):
 
@@ -249,10 +125,10 @@ class TestLight(unittest.TestCase):
             self.assertTrue(light1.sublight_a.get_mode() == sublight_off_str)
             self.assertTrue(light1.sublight_b.get_mode() == sublight_off_str)
 
-    @unittest.skip("Skipping test_light2: light2 not yet implemented")
+    # @unittest.skip("Skipping test_light2: light2 not yet implemented")
     def test_light2(self):  # high -> low -> off, twice
 
-        pause_time = 0
+        pause_time = 0.5
 
         for i in range(2):
             light2.set_mode(light_high_str)
@@ -273,7 +149,7 @@ class TestLight(unittest.TestCase):
 
     def test_low_blink(self):
 
-        pause_time = 0
+        pause_time = 0.2
         previous_switch = None
 
         for i in range(10):
@@ -283,115 +159,33 @@ class TestLight(unittest.TestCase):
             self.assertTrue(light1.get_mode() == light_low_str)
             self.assertIsNot(light1.sublight_switch, previous_switch)
 
+    def test_sublight_validity(self):
 
-# @unittest.skip("Skipping TestSimplifiedMethods Class...")
-class TestSimplifiedMethods(unittest.TestCase):
+        uno.disconnect()
 
-    @classmethod
-    def setUpClass(cls):
+        good_light1 = led_red
+        good_light2 = led_blue
+        bad_light1 = 'hello'
+        bad_light2 = Valve(uno, 5)
 
-        time.sleep(3)
+        with self.assertRaises(TypeError):
+            Light(good_light1, bad_light1)
 
-    def setUp(self):
+        with self.assertRaises(TypeError):
+            Light(bad_light2, good_light2)
 
-        pass
+        with self.assertRaises(TypeError):
+            Light(bad_light1, bad_light2)
 
-    def test_sublight_simplified_methods(self):
+        with self.assertRaises(RuntimeError):
+            Light(good_light1, good_light1)
 
-        sublight_1A.on()
-        sublight_1A.on()
-        sublight_1A.off()
-        sublight_1A.off()
-        sublight_1A.on()
-        sublight_1A.off()
-        sublight_1A.on()
-        sublight_1A.off()
+        # next one should pass
+        lightc = Light(good_light1, good_light2)
 
-        sublight_1B.on()
-        sublight_1B.on()
-        sublight_1B.off()
-        sublight_1B.off()
-        sublight_1B.on()
-        sublight_1B.off()
-        sublight_1B.on()
-        sublight_1B.off()
+        uno.connect()
 
-    def test_pump_simplified_methods(self):
-
-        pump1.on()
-        pump1.on()
-        pump1.off()
-        pump1.off()
-        pump1.on()
-        pump1.off()
-
-    def test_valve_simplified_methods(self):
-
-        valve_list = [
-            inlet_valve,
-            zone1_valve,
-            zone2_valve,
-            zone3_valve,
-            zone4_valve,
-            zone5_valve,
-            zone6_valve,
-            outlet_valve
-            ]
-        for valve in valve_list:
-
-            valve.open()
-            valve.open()
-            valve.close()
-            valve.close()
-            valve.open()
-            valve.close()
-
-    def test_light_simplified_methods(self):
-
-        light1.off()
-        light1.low()
-        light1.high()
-        light1.low()
-        light1.off()
-        light1.high()
-        light1.off()
-        light1.low()
-        light1.low()
-        light1.off()
-
-    def test_typical_use(self):
-
-        flood_drain_time = 2
-
-        zone_list = [
-            zone1,
-            zone2,
-            zone3,
-            zone4,
-            zone5,
-            zone6
-        ]
-
-        light1.high()
-
-        for zone in zone_list:
-
-            zone.fill()
-            zone.maintain()
-            zone.drain()
-            zone.maintain()
-
-        light1.low()
-
-        for zone in zone_list:
-            zone.fill()
-            time.sleep(flood_drain_time)
-            zone.maintain()
-            zone.drain()
-            time.sleep(flood_drain_time)
-            zone.maintain()
-
-        light1.off()
+        lightc.high()
 
 
 if __name__ == '__main__':

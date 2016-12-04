@@ -1,6 +1,10 @@
-from HydroIO import set_pin, get_pin
+from pyfirmata import Arduino, util, PWM
+import time
 
-
+default_HIGH_str = 'DEFAULT_HIGH'
+default_LOW_str = 'DEFAULT_LOW'
+relay_open_str = 'RELAY_OPEN'
+relay_closed_str = 'RELAY_CLOSED'
 pump_off_str = 'PUMP_OFF'
 pump_on_str = 'PUMP_ON'
 valve_closed_str = 'VALVE_CLOSED'
@@ -11,59 +15,161 @@ light_off_str = 'LIGHT_OFF'
 light_low_str = 'LIGHT_LOW'
 light_high_str = 'LIGHT_HIGH'
 
+# TODO change these -- they are backwards
+RELAY_OPEN = 0
+RELAY_CLOSED = 1
 
-pump_modes = {pump_off_str: 0, pump_on_str: 1}
-valve_modes = {valve_closed_str: 0, valve_open_str: 1}
-sublight_modes = {sublight_off_str: 0, sublight_on_str: 1}
-light_modes = {light_off_str: 0, light_low_str: 1, light_high_str: 2}
+default_modes = {default_LOW_str: 0, default_HIGH_str: 1}
+relay_modes = {relay_open_str: RELAY_OPEN, relay_closed_str: RELAY_CLOSED}
+pump_modes = {pump_off_str: RELAY_OPEN, pump_on_str: RELAY_CLOSED}
+valve_modes = {valve_closed_str: RELAY_OPEN, valve_open_str: RELAY_CLOSED}
+sublight_modes = {sublight_off_str: RELAY_OPEN, sublight_on_str: RELAY_CLOSED}
+light_modes = {light_off_str: 2, light_low_str: 1, light_high_str: 0}
+
+default_modes_rev = {str(0): default_LOW_str, str(1): default_HIGH_str}
+relay_modes_rev = {str(RELAY_OPEN): relay_open_str, str(RELAY_CLOSED): relay_closed_str}
+pump_modes_rev = {str(RELAY_OPEN): pump_off_str, str(RELAY_CLOSED): pump_on_str}
+valve_modes_rev = {str(RELAY_OPEN): valve_closed_str, str(RELAY_CLOSED): valve_open_str}
+sublight_modes_rev = {str(RELAY_OPEN): sublight_off_str, str(RELAY_CLOSED): sublight_on_str}
+light_modes_rev = {str(2): light_off_str, str(1): light_low_str, str(0): light_high_str}
 
 
-def check_if_successful(status):
+class Controller:
+    """Board that controls components.  Each board needs its own session.  First initialize controller, then components,
+    then connect."""
+    def __init__(self, board_addr):
+        self.board_addr = board_addr
+        self.board = None
+        self.it = None
+        self.relays = []
+        self.loads = []
+        self.sensors = []
+        self.active = False
 
-    if status[0] is False:
-        raise RuntimeError('Arduino communication failed!')
+        # self.connect()
+
+    def connect(self):
+        if self.active:
+            print('Already connected!')
+            return
+        print('Connecting to controller board...')
+        self.board = Arduino(self.board_addr)
+        self.it = util.Iterator(self.board)
+        self.it.start()
+
+        # turn off individual load relays before turning on relay sub-board
+        for load in self.loads:
+            self.board.digital[load.pin].write(1)
+        # turn on relay sub-board, enabling relay control
+
+        time.sleep(0.5)
+
+        for relay in self.relays:
+            self.board.digital[relay.pin].write(1)
+
+        #for sensor in self.sensors:
+         #   self.board.analog[sensor.pin].enable_reporting
+
+        self.active = True
+        print('Connection successful!')
+
+    def disconnect(self):
+        self.check_connection()
+        print('Disconnecting controller board...')
+        self.active = False
+        #for sensor in self.sensors:
+          #  self.board.analog[sensor.pin].disable_reporting
+        # disable all relay sub-boards
+        for relay in self.relays:
+            self.board.digital[relay.pin].write(0)
+        # set all load pins to LOW
+        for load in self.loads:
+            self.board.digital[load.pin].write(0)
+
+        self.board.exit()
+        self.board = None
+        self.it = None
+        print('Disconnected!')
+
+    def reconnect(self):
+        self.check_connection()
+        print('Resetting connection...')
+        self.disconnect()
+        self.connect()
+
+    def check_connection(self):
+        if self.active is False:
+            raise RuntimeError('Controller not connected!')
+
+    def all_loads_off(self):
+        self.check_connection()
+        for load in self.loads:
+            self.board.digital[load.pin].write(RELAY_OPEN)
 
 
-class Load:
 
-    def __init__(self, pin, mode_dict):
+# TODO change everything to pin#-type setting.  Let higher abstraction module handle load->number mapping
+class Component:
+    """Superclass, mostly to prevent adding/removing components while Controller is active."""
+    def __init__(self, controller, pin):
 
+        self.controller = controller
         self.pin = pin
+        # board must be inactive to initialize and add a load
+        if self.controller.active is True:
+            raise RuntimeError('Controller already active!  Cannot add more components while board is active.  '
+                               'Disconnect before adding components.')
+
+
+class Load(Component):
+    """Digital output pin.  On or Off."""
+    def __init__(self, controller, pin, mode_dict=default_modes, mode_dict_rev=default_modes_rev):
+        Component.__init__(self, controller, pin)
         self.mode_dict = mode_dict
+        self.mode_dict_rev = mode_dict_rev
+        # if relay, add to relay list.  All others added to load list
+        if mode_dict == relay_modes:
+            self.controller.relays.append(self)
+        else:
+            self.controller.loads.append(self)
 
     def set_mode(self, target_mode):
-
+        self.controller.check_connection()
         if target_mode not in self.mode_dict:
             raise ValueError('Invalid mode setting for Load!')
 
-        status = set_pin(self.pin, self.mode_dict[target_mode])
-        check_if_successful(status)
+        self.controller.board.digital[self.pin].write(self.mode_dict[target_mode])
         return None
 
     def get_mode(self):
+        self.controller.check_connection()
+        # find status of pin (0 or 1) and return mode-str
+        status = self.controller.board.digital[self.pin].read()
+        return self.mode_dict_rev[str(status)]
 
-        status = get_pin(self.pin)
-        check_if_successful(status)
-        return status[1]    # returns 0 or 1
+    def high(self):
+        self.set_mode(default_HIGH_str)
+
+    def low(self):
+        self.set_mode(default_LOW_str)
+
+
+class Relay(Load):
+
+    def __init__(self, controller, pin):
+        Load.__init__(self, controller, pin, relay_modes, relay_modes_rev)
+
+    def close(self):
+        self.set_mode(relay_closed_str)
+
+    def open(self):
+        self.set_mode(relay_open_str)
 
 
 class Pump(Load):
 
-    def __init__(self, pin):
-        Load.__init__(self, pin, pump_modes)
-
-    def set_mode(self, target_mode):
-        Load.set_mode(self, target_mode)
-
-    def get_mode(self):
-
-        current_mode = Load.get_mode(self)
-        if current_mode is self.mode_dict[pump_off_str]:
-            return pump_off_str
-        elif current_mode is self.mode_dict[pump_on_str]:
-            return pump_on_str
-        else:
-            raise RuntimeError('Pump get_mode failed!')
+    def __init__(self, controller, pin):
+        Load.__init__(self, controller, pin, pump_modes, pump_modes_rev)
 
     def off(self):
         self.set_mode(pump_off_str)
@@ -74,21 +180,12 @@ class Pump(Load):
 
 class Valve(Load):
 
-    def __init__(self, pin):
-        Load.__init__(self, pin, valve_modes)
+    def __init__(self, controller, pin):
+        Load.__init__(self, controller, pin, valve_modes, valve_modes_rev)
 
     def set_mode(self, target_mode):
         Load.set_mode(self, target_mode)
-
-    def get_mode(self):
-
-        current_mode = Load.get_mode(self)
-        if current_mode is self.mode_dict[valve_closed_str]:
-            return valve_closed_str
-        elif current_mode is self.mode_dict[valve_open_str]:
-            return valve_open_str
-        else:
-            raise RuntimeError('Valve get_mode failed!')
+        self.controller.board.pass_time(5)
 
     def close(self):
         self.set_mode(valve_closed_str)
@@ -99,21 +196,8 @@ class Valve(Load):
 
 class Sublight(Load):
 
-    def __init__(self, pin):
-        Load.__init__(self, pin, sublight_modes)
-
-    def set_mode(self, target_mode):
-        Load.set_mode(self, target_mode)
-
-    def get_mode(self):
-
-        current_mode = Load.get_mode(self)
-        if current_mode is self.mode_dict[sublight_off_str]:
-            return sublight_off_str
-        elif current_mode is self.mode_dict[sublight_on_str]:
-            return sublight_on_str
-        else:
-            raise RuntimeError('SubLight get_mode failed!')
+    def __init__(self, controller, pin):
+        Load.__init__(self, controller, pin, sublight_modes, sublight_modes_rev)
 
     def off(self):
         self.set_mode(sublight_off_str)
@@ -125,10 +209,18 @@ class Sublight(Load):
 class Light:
 
     def __init__(self, sublight_a, sublight_b):
+
+        if (type(sublight_a) is not Sublight) or (type(sublight_b) is not Sublight):
+            raise TypeError('Lights may only be composed of sublights.')
+
+        if sublight_a == sublight_b:
+            raise RuntimeError('The same sublight was listed twice for this Light.')
+
         self.sublight_a = sublight_a
         self.sublight_b = sublight_b
         self.sublight_switch = self.sublight_a
         self.mode_dict = light_modes
+        self.mode_dict_rev = light_modes_rev
 
     def set_mode(self, target_mode):
 
@@ -223,3 +315,41 @@ class Zone:
         self.drain()
         # time.sleep(drain_time)
         self.maintain()
+
+
+if __name__ == '__main__':
+
+    # setup
+    addr = '/dev/ttyACM0'
+    uno = Controller(addr)
+    led_red = Sublight(uno, 2)
+    led_yellow = Sublight(uno, 3)
+    led_green = Sublight(uno, 4)
+    led_blue = Sublight(uno, 5)
+    led_white1 = Sublight(uno, 6)
+    led_white2 = Sublight(uno, 7)
+
+    led_list = [led_red, led_yellow, led_green, led_blue, led_white1, led_white2]
+
+    # run
+
+    try:
+        uno.connect()
+        time.sleep(2)
+
+        for led in led_list:
+            led.off()
+
+        for i in range(20):
+            for j in range(len(led_list)):
+                led_list[(j+1)%len(led_list)].on()
+                time.sleep(0.04)
+                led_list[j].off()
+                time.sleep(0.01)
+
+    finally:
+
+        uno.disconnect()
+        print('Disconnected.')
+
+    print('~~~ Finished! ~~~')

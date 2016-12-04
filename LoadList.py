@@ -2,6 +2,8 @@
 # imports
 from HydroLoads import Zone, Pump, Light, Valve, Sublight
 
+#TODO add session
+
 # general definitions
 FLOOD_TIME = 0
 DRAIN_TIME = 0
