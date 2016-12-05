@@ -3,27 +3,27 @@
 import unittest
 import time
 
+from pyfirmata import PinAlreadyTakenError
 from HydroLoads import *
 
 addr = '/dev/ttyACM0'
 uno = Controller(addr)
-led_red = Sublight(uno, 2)
-led_yellow = Sublight(uno, 3)
-led_green = Sublight(uno, 4)
-led_blue = Sublight(uno, 5)
-led_white1 = Sublight(uno, 6)
-led_white2 = Sublight(uno, 7)
+led_red = Valve(uno, 4)
+led_orange = Valve(uno, 5)
+led_yellow = Valve(uno, 6)
+led_green = Valve(uno, 7)
+led_blue = Valve(uno, 8)
+led_purple = Valve(uno, 9)
+led_white1 = Sublight(uno, 10)
+led_white2 = Sublight(uno, 11)
 
-led_list = [led_red, led_yellow, led_green, led_blue, led_white1, led_white2]
-
-buzzer = Load(uno, 8)
+relay1 = Relay(uno, 2)
+buzzer = Load(uno, 3)
 
 sublight_1A = led_white1
 sublight_1B = led_white2
-sublight_2A = led_green
-sublight_2B = led_blue
+
 light1 = Light(sublight_1A, sublight_1B)
-light2 = Light(sublight_2A, sublight_2B)
 
 
 def buzz(Hz, sec):
@@ -32,13 +32,13 @@ def buzz(Hz, sec):
     now = time.time()
     try:
         while now - start < sec:
-            buzzer.high()
+            buzzer.on()
             time.sleep(1 / Hz)
-            buzzer.low()
+            buzzer.off()
             time.sleep(1 / Hz)
             now = time.time()
     finally:
-        buzzer.low()
+        buzzer.off()
 
 
 # @unittest.skip("Skipping TestPump Class...")
@@ -53,22 +53,26 @@ class TestController(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        uno.connect()
+        pass
 
     @classmethod
     def tearDownClass(cls):
-        uno.disconnect()
+        pass
 
     def setUp(self):
         uno.connect()
-        uno.all_loads_off()
+        uno.clear_pins()
 
     def tearDown(self):
         buzz(100, 0.5)
+        uno.disconnect()
 
     # @unittest.skip("Skipping test")
     def test_reconnect(self):
         uno.reconnect()
+
+    def test_all_pins_low(self):
+        uno.clear_pins()
 
     def test_adding_when_connected(self):
         with self.assertRaises(RuntimeError):
@@ -91,27 +95,60 @@ class TestController(unittest.TestCase):
 class TestLoad(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        uno.connect()
+        pass
 
     @classmethod
     def tearDownClass(cls):
-        uno.disconnect()
+        pass
 
     def setUp(self):
         uno.connect()
-        uno.all_loads_off()
+        uno.clear_pins()
 
     def tearDown(self):
         buzz(100, 0.5)
+        uno.disconnect()
 
     # @unittest.skip("Skipping test")
     def test_add_load(self):
         uno.disconnect()
 
-        temp1 = Component(uno, 13)
-        temp2 = Component(uno, 13)
+        with self.assertRaises(PinAlreadyTakenError):
+            temp1 = Component(uno, 13)
+            temp2 = Component(uno, 13)
+            uno.connect()
 
+        uno.components.remove(temp1)
+        uno.components.remove(temp2)
+        temp1 = None
+        temp2 = None
         uno.connect()
+
+    def test_relay(self):
+
+        time.sleep(0.5)
+        relay1.disable()
+        time.sleep(0.5)
+        uno.enable_all_relays()
+        time.sleep(0.5)
+
+    def test_valve(self):
+        led_red.open()
+        led_purple.open()
+        led_white1.on()
+        led_purple.open()
+        # purple should close as white1 goes on
+        led_purple.close()
+        uno.close_all_valves()
+        led_blue.open()
+
+    def test_emer_off(self):
+        led_blue.open()
+        led_yellow.open()
+        led_red.open()
+        light1.high()
+        time.sleep(2)
+        uno.emergency_off()
 
 
 # @unittest.skip("Skipping TestLight Class...")
@@ -119,20 +156,21 @@ class TestLight(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        uno.connect()
+        pass
 
     @classmethod
     def tearDownClass(cls):
-        uno.disconnect()
+        pass
 
     def setUp(self):
         uno.connect()
-        uno.all_loads_off()
+        uno.clear_pins()
 
     def tearDown(self):
         buzz(100, 0.5)
+        uno.disconnect()
 
-    def test_light1(self):  # high -> low -> off, twice
+    def test_light1(self):  # on -> off -> off, twice
 
         pause_time = 0.5
 
@@ -154,28 +192,6 @@ class TestLight(unittest.TestCase):
             self.assertTrue(light1.sublight_a.get_mode() == sublight_off_str)
             self.assertTrue(light1.sublight_b.get_mode() == sublight_off_str)
 
-    # @unittest.skip("Skipping test_light2: light2 not yet implemented")
-    def test_light2(self):  # high -> low -> off, twice
-
-        pause_time = 0.5
-
-        for i in range(2):
-            light2.set_mode(light_high_str)
-            time.sleep(pause_time)
-            self.assertTrue(light2.get_mode() == light_high_str)
-            self.assertTrue(light2.sublight_a.get_mode() == sublight_on_str)
-            self.assertTrue(light2.sublight_b.get_mode() == sublight_on_str)
-
-            light2.set_mode(light_low_str)
-            time.sleep(pause_time)
-            self.assertTrue(light2.get_mode() == light_low_str)
-
-            light2.set_mode(light_off_str)
-            time.sleep(pause_time)
-            self.assertTrue(light2.get_mode() == light_off_str)
-            self.assertTrue(light2.sublight_a.get_mode() == sublight_off_str)
-            self.assertTrue(light2.sublight_b.get_mode() == sublight_off_str)
-
     def test_low_blink(self):
 
         pause_time = 0.2
@@ -192,10 +208,10 @@ class TestLight(unittest.TestCase):
 
         uno.disconnect()
 
-        good_light1 = led_red
-        good_light2 = led_blue
+        good_light1 = led_white1
+        good_light2 = led_white2
         bad_light1 = 'hello'
-        bad_light2 = Valve(uno, 5)
+        bad_light2 = Valve(uno, 13)
 
         with self.assertRaises(TypeError):
             Light(good_light1, bad_light1)
