@@ -1,4 +1,4 @@
-from pyfirmata import Arduino, util, PWM
+from pyfirmata import ArduinoMega, util, PWM
 import time
 
 default_on_str = 'DEFAULT_HIGH'
@@ -16,8 +16,8 @@ light_low_str = 'LIGHT_LOW'
 light_high_str = 'LIGHT_HIGH'
 
 # TODO change these -- they are backwards
-RELAY_OPEN = 0
-RELAY_CLOSED = 1
+RELAY_OPEN = 1
+RELAY_CLOSED = 0
 
 VALVE_PAUSE = 1
 
@@ -53,7 +53,7 @@ class Controller:
             print('Already connected!')
             return
         print('Connecting to controller board...')
-        self.board = Arduino(self.board_addr)
+        self.board = ArduinoMega(self.board_addr)
         self.it = util.Iterator(self.board)
         self.it.start()
         self.active = True
@@ -62,7 +62,7 @@ class Controller:
             # prepare all pin_objs after board connects
             component.prepare()
             # all loads set to RELAY_OPEN before relay board enabled
-            if isinstance(component, Load):
+            if isinstance(component, Load) and not isinstance(component, RelayBoard):
                 component.pin_obj.write(RELAY_OPEN)
 
         # turn on relay sub-board, enabling relay control
@@ -81,6 +81,7 @@ class Controller:
         #  self.board.analog[sensor.pin].disable_reporting
 
         # disable all relay sub-boards
+        self.close_all_valves()
         self.disable_all_relays()
 
         # set all load pins to LOW
@@ -111,13 +112,13 @@ class Controller:
     def enable_all_relays(self):
         self.check_connection()
         for component in self.components:
-            if isinstance(component, Relay):
+            if isinstance(component, RelayBoard):
                 component.enable()
 
     def disable_all_relays(self):
         self.check_connection()
         for component in self.components:
-            if isinstance(component, Relay):
+            if isinstance(component, RelayBoard):
                 component.disable()
 
     def close_all_valves(self):
@@ -138,7 +139,7 @@ class Controller:
         """turn off loads, open all valves for drainage"""
         self.check_connection()
         for component in self.components:
-            if isinstance(component, Load) and not isinstance(component, Relay) and not isinstance(component, Valve):
+            if isinstance(component, Load) and not isinstance(component, RelayBoard) and not isinstance(component, Valve):
                 component.pin_obj.write(RELAY_OPEN)
 
         self.close_all_valves()
@@ -147,7 +148,7 @@ class Controller:
         """set all Loads off except for relays-- mostly for debugging"""
         self.check_connection()
         for component in self.components:
-            if isinstance(component, Load) and not isinstance(component, Relay):
+            if isinstance(component, Load) and not isinstance(component, RelayBoard):
                 component.pin_obj.write(0)
 
 
@@ -200,7 +201,7 @@ class Load(Component):
         self.set_mode(default_off_str)
 
 
-class Relay(Load):
+class RelayBoard(Load):
 
     def __init__(self, controller, pin):
         Load.__init__(self, controller, pin, relay_modes, relay_modes_rev)
@@ -368,53 +369,5 @@ class Zone:
 
 
 if __name__ == '__main__':
+    pass
 
-    # setup
-    addr = '/dev/ttyACM0'
-    uno = Controller(addr)
-    led_red = Sublight(uno, 4)
-    led_orange = Sublight(uno, 5)
-    led_yellow = Sublight(uno, 6)
-    led_green = Sublight(uno, 7)
-    led_blue = Sublight(uno, 8)
-    led_purple = Sublight(uno, 9)
-    led_white1 = Sublight(uno, 10)
-    led_white2 = Sublight(uno, 11)
-
-    led_list = [led_red, led_orange, led_yellow, led_green, led_blue, led_purple, led_white1, led_white2]
-
-    buzzer = Load(uno, 3)
-    relay1 = Relay(uno, 2)
-
-    # run
-
-    try:
-        uno.connect()
-        time.sleep(2)
-        pause_time = 0.1
-        for led in led_list:
-            led.off()
-
-        for i in range(100):
-            for j in range(len(led_list)):
-                pause_time *= 0.97
-
-                led_list[(j+1)%len(led_list)].on()
-                time.sleep(2*pause_time)
-                led_list[j].off()
-                time.sleep(pause_time)
-
-        for led in led_list:
-            led.off()
-
-        for k in range(20):
-            buzzer.on()
-            time.sleep(0.05)
-            buzzer.off()
-            time.sleep(0.05)
-
-    finally:
-
-        uno.disconnect()
-
-    print('~~~ Finished! ~~~')

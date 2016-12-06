@@ -36,6 +36,7 @@ class TestZones(unittest.TestCase):
     # @unittest.skip("Skipping test")
     def test_cycle_zones(self):
 
+        time.sleep(3)
         light1.low()
         for zone in zones:
             print('Filling ' + zone.name)
