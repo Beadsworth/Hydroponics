@@ -20,7 +20,7 @@ class Task:
         self.function = function
         self.args = args
 
-    # TODO more tests on __str__ and __repr__
+    # TODO more tests high __str__ and __repr__
     def __repr__(self):
         arg_str = ''
         for item in self.args:

@@ -1,39 +1,34 @@
 from pyfirmata import ArduinoMega, util, PWM
 import time
 
-default_on_str = 'DEFAULT_HIGH'
-default_off_str = 'DEFAULT_LOW'
-relay_disable_str = 'RELAY_OPEN'
-relay_enable_str = 'RELAY_CLOSED'
-pump_off_str = 'PUMP_OFF'
-pump_on_str = 'PUMP_ON'
-valve_closed_str = 'VALVE_CLOSED'
+default_high_str = 'HIGH'
+default_low_str = 'LOW'
+relay_open_str = 'RELAY_OPEN'
+relay_close_str = 'RELAY_CLOSE'
+relay_disable_str = 'RELAY_DISABLE'
+relay_enable_str = 'RELAY_ENABLE'
+load_off_str = 'LOAD_OFF'
+load_on_str = 'LOAD_ON'
+valve_close_str = 'VALVE_CLOSE'
 valve_open_str = 'VALVE_OPEN'
-sublight_off_str = 'SUBLIGHT_OFF'
-sublight_on_str = 'SUBLIGHT_ON'
 light_off_str = 'LIGHT_OFF'
 light_low_str = 'LIGHT_LOW'
 light_high_str = 'LIGHT_HIGH'
 
-# TODO change these -- they are backwards
-RELAY_OPEN = 1
-RELAY_CLOSED = 0
-
 VALVE_PAUSE = 1
 
-default_modes = {default_off_str: RELAY_OPEN, default_on_str: RELAY_CLOSED}
-relay_modes = {relay_disable_str: 0, relay_enable_str: 1}
-pump_modes = {pump_off_str: RELAY_OPEN, pump_on_str: RELAY_CLOSED}
-valve_modes = {valve_closed_str: RELAY_OPEN, valve_open_str: RELAY_CLOSED}
-sublight_modes = {sublight_off_str: RELAY_OPEN, sublight_on_str: RELAY_CLOSED}
-light_modes = {light_off_str: 2, light_low_str: 1, light_high_str: 0}
+LOW = 0
+HIGH = 1
+RELAY_OPEN = HIGH
+RELAY_CLOSED = LOW
 
-default_modes_rev = {str(RELAY_OPEN): default_off_str, str(RELAY_CLOSED): default_on_str}
-relay_modes_rev = {str(0): relay_disable_str, str(1): relay_enable_str}
-pump_modes_rev = {str(RELAY_OPEN): pump_off_str, str(RELAY_CLOSED): pump_on_str}
-valve_modes_rev = {str(RELAY_OPEN): valve_closed_str, str(RELAY_CLOSED): valve_open_str}
-sublight_modes_rev = {str(RELAY_OPEN): sublight_off_str, str(RELAY_CLOSED): sublight_on_str}
-light_modes_rev = {str(2): light_off_str, str(1): light_low_str, str(0): light_high_str}
+DEFAULT_STATES = {default_low_str: LOW, default_high_str: HIGH}
+RELAY_BOARD_STATES = {relay_disable_str: LOW, relay_enable_str: HIGH}
+RELAY_STATES = {relay_close_str: RELAY_CLOSED, relay_open_str: RELAY_OPEN}
+LOAD_STATES = {load_on_str: RELAY_CLOSED, load_off_str: RELAY_OPEN}
+SUBLIGHT_STATES = LOAD_STATES
+VALVE_STATES = {valve_open_str: RELAY_CLOSED, valve_close_str: RELAY_OPEN}
+LIGHT_STATES = {light_off_str: 2, light_low_str: 1, light_high_str: 0}
 
 
 class Controller:
@@ -58,14 +53,15 @@ class Controller:
         self.it.start()
         self.active = True
 
-        for component in self.components:
+        for component in [comp for comp in self.components if isinstance(comp, Component)]:
             # prepare all pin_objs after board connects
             component.prepare()
             # all loads set to RELAY_OPEN before relay board enabled
-            if isinstance(component, Load) and not isinstance(component, RelayBoard):
-                component.pin_obj.write(RELAY_OPEN)
+            if isinstance(component, Relay):
+                pass
+                # component.open()
 
-        # turn on relay sub-board, enabling relay control
+        # turn high relay sub-board, enabling relay control
         time.sleep(0.5)
         self.enable_all_relays()
 
@@ -87,7 +83,7 @@ class Controller:
         # set all load pins to LOW
         for component in self.components:
             # all loads set to RELAY_OPEN
-            if isinstance(component, Load):
+            if isinstance(component, Output):
                 component.pin_obj.write(RELAY_OPEN)
 
             # set all pin_obj to None
@@ -108,6 +104,10 @@ class Controller:
     def check_connection(self):
         if self.active is False:
             raise RuntimeError('Controller not connected!')
+
+    def component_name_check(self, name_str):
+        if name_str in [component.name for component in self.components]:
+            raise RuntimeError('Multiple Components have the same name: \"' + name_str + '\"')
 
     def enable_all_relays(self):
         self.check_connection()
@@ -136,34 +136,36 @@ class Controller:
                 component.open()
 
     def emergency_off(self):
-        """turn off loads, open all valves for drainage"""
+        """turn low loads, close all valves"""
         self.check_connection()
         for component in self.components:
-            if isinstance(component, Load) and not isinstance(component, RelayBoard) and not isinstance(component, Valve):
+            if isinstance(component, Output) and not isinstance(component, RelayBoard) and not isinstance(component, Valve):
                 component.pin_obj.write(RELAY_OPEN)
 
         self.close_all_valves()
 
     def clear_pins(self):
-        """set all Loads off except for relays-- mostly for debugging"""
+        """set all Loads low except for relays-- mostly for debugging"""
         self.check_connection()
         for component in self.components:
-            if isinstance(component, Load) and not isinstance(component, RelayBoard):
-                component.pin_obj.write(0)
+            if isinstance(component, Output) and not isinstance(component, RelayBoard):
+                component.low()
 
 
 class Component:
     """Superclass, mostly to prevent adding/removing components while Controller is active."""
-    def __init__(self, controller, pin):
+    def __init__(self, controller, pin, name):
 
+        controller.component_name_check(name)
         self.controller = controller
+        self.pin = pin
+        self.name = name
 
         # board must be inactive to initialize and add a load
         if self.controller.active is True:
             raise RuntimeError('Controller already active!  Cannot add more components while board is active.  '
                                'Disconnect before adding components.')
 
-        self.pin = pin
         self.pin_obj = None
         self.controller.components.append(self)
 
@@ -173,93 +175,112 @@ class Component:
         self.pin_obj = self.controller.board.get_pin('d:' + str(self.pin) + ':o')
 
 
-class Load(Component):
+class Output(Component):
     """Digital output pin.  On or Off."""
-    def __init__(self, controller, pin, mode_dict=default_modes, mode_dict_rev=default_modes_rev):
-        Component.__init__(self, controller, pin)
-        self.mode_dict = mode_dict
-        self.mode_dict_rev = mode_dict_rev
+    def __init__(self, controller, pin, name):
+        Component.__init__(self, controller, pin, name)
+        # make state_dict first, make reverse in constructor.  If no states given, set default
+        if self.states is None:
+            self.states = DEFAULT_STATES
+        self.states_lookup = {v: k for k, v in self.states.items()}
 
-    def set_mode(self, target_mode):
+    def set_state(self, target_state):
         self.controller.check_connection()
-        if target_mode not in self.mode_dict:
-            raise ValueError('Invalid mode setting for Load!')
+        if target_state not in self.states:
+            raise ValueError('Invalid state setting for Output!')
 
-        self.pin_obj.write(self.mode_dict[target_mode])
+        self.pin_obj.write(self.states[target_state])
         return None
 
-    def get_mode(self):
+    def get_state(self):
         self.controller.check_connection()
-        # find status of pin (0 or 1) and return mode-str
+        # find status of pin (0 or 1) and return state-str
         status = self.pin_obj.read()
-        return self.mode_dict_rev[str(status)]
+        return self.states_lookup[str(status)]
 
-    def on(self):
-        self.set_mode(default_on_str)
+    def high(self):
+        self.set_state(default_high_str)
 
-    def off(self):
-        self.set_mode(default_off_str)
+    def low(self):
+        self.set_state(default_low_str)
 
 
-class RelayBoard(Load):
+class RelayBoard(Output):
 
-    def __init__(self, controller, pin):
-        Load.__init__(self, controller, pin, relay_modes, relay_modes_rev)
+    def __init__(self, controller, pin, name):
+        self.states = RELAY_BOARD_STATES
+        Output.__init__(self, controller, pin, name)
 
     def enable(self):
-        self.set_mode(relay_enable_str)
+        self.set_state(relay_enable_str)
 
     def disable(self):
-        self.set_mode(relay_disable_str)
+        self.set_state(relay_disable_str)
 
 
-class Pump(Load):
-
-    def __init__(self, controller, pin):
-        Load.__init__(self, controller, pin, pump_modes, pump_modes_rev)
-
-    def off(self):
-        self.set_mode(pump_off_str)
-
-    def on(self):
-        self.set_mode(pump_on_str)
-
-
-class Valve(Load):
-
-    def __init__(self, controller, pin):
-        Load.__init__(self, controller, pin, valve_modes, valve_modes_rev)
-
-    def set_mode(self, target_mode):
-        # if valve already in this state, do nothing
-        if target_mode is self.get_mode():
-            return
-        else:
-            Load.set_mode(self, target_mode)
-            self.controller.board.pass_time(VALVE_PAUSE)
+class Relay(Output):
+    load_state1 = 2
+    def __init__(self, controller, pin, name):
+        self.states = RELAY_STATES
+        Output.__init__(self, controller, pin, name)
 
     def close(self):
-        self.set_mode(valve_closed_str)
+        self.set_state(relay_close_str)
 
     def open(self):
-        self.set_mode(valve_open_str)
+        self.set_state(relay_open_str)
+
+
+class Load(Relay):
+
+    states = LOAD_STATES
+
+    def __init__(self, controller, pin, name):
+        Output.__init__(self, controller, pin, name)
+
+    def off(self):
+        self.set_state(load_off_str)
+
+    def on(self):
+        self.set_state(load_on_str)
 
 
 class Sublight(Load):
 
-    def __init__(self, controller, pin):
-        Load.__init__(self, controller, pin, sublight_modes, sublight_modes_rev)
+    states = SUBLIGHT_STATES
 
-    def off(self):
-        self.set_mode(sublight_off_str)
+    def __init__(self, controller, pin, name):
+        Output.__init__(self, controller, pin, name)
 
-    def on(self):
-        self.set_mode(sublight_on_str)
+
+class Valve(Relay):
+
+    states = VALVE_STATES
+
+    def __init__(self, controller, pin, name):
+
+        Output.__init__(self, controller, pin, name)
+
+    def set_state(self, target_state):
+        # if valve already in this state, do nothing
+        if target_state is self.get_state():
+            return
+        else:
+            Output.set_state(self, target_state)
+            self.controller.board.pass_time(VALVE_PAUSE)
+
+    def close(self):
+        self.set_state(valve_close_str)
+
+    def open(self):
+        self.set_state(valve_open_str)
 
 
 class Light:
 
-    def __init__(self, sublight_a, sublight_b):
+    states = LIGHT_STATES
+
+    def __init__(self, controller, sublight_a, sublight_b, name):
 
         if (type(sublight_a) is not Sublight) or (type(sublight_b) is not Sublight):
             raise TypeError('Lights may only be composed of sublights.')
@@ -267,67 +288,76 @@ class Light:
         if sublight_a == sublight_b:
             raise RuntimeError('The same sublight was listed twice for this Light.')
 
+        controller.component_name_check(name)
+
+        self.controller = controller
         self.sublight_a = sublight_a
         self.sublight_b = sublight_b
-        self.sublight_switch = self.sublight_a
-        self.mode_dict = light_modes
-        self.mode_dict_rev = light_modes_rev
+        self.name = name
+        self.sublight_switch = None
 
-    def set_mode(self, target_mode):
+        self.controller.components.append(self)
 
-        if target_mode not in self.mode_dict:
-            raise ValueError('Invalid mode setting for Light!')
+    def set_state(self, target_state):
 
-        if self.mode_dict[target_mode] is self.mode_dict[light_off_str]:
+        self.controller.check_connection()
+        if target_state not in Light.states:
+            raise ValueError('Invalid state setting for Light!')
+
+        if target_state == light_off_str:
 
             self.sublight_a.off()
             self.sublight_b.off()
 
-        elif self.mode_dict[target_mode] is self.mode_dict[light_low_str]:
+        elif target_state == light_low_str:
 
-            if self.sublight_switch is self.sublight_a:
-                self.sublight_b.off()
-                self.sublight_a.on()
-                self.sublight_switch = self.sublight_b
-            else:
-                self.sublight_a.off()
-                self.sublight_b.on()
-                self.sublight_switch = self.sublight_a
+            # switch objects between a and b, turn on a, turn off b ALWAYS
+            self.sublight_switch = self.sublight_a
+            self.sublight_a = self.sublight_b
+            self.sublight_b = self.sublight_switch
+            self.sublight_switch = None
 
-        elif self.mode_dict[target_mode] is self.mode_dict[light_high_str]:
+            self.sublight_a.on()
+            self.sublight_b.off()
+
+        elif target_state == light_high_str:
 
             self.sublight_a.on()
             self.sublight_b.on()
 
         else:
-            raise RuntimeError('Unexpected mode error for Light!')
+            raise RuntimeError('Unexpected state error for Light!')
 
         return None
 
-    def get_mode(self):
+    def get_state(self):
 
-        mode_a = self.sublight_a.get_mode()
-        mode_b = self.sublight_b.get_mode()
-        combo = (mode_a, mode_b)
+        state_a = self.sublight_a.get_state()
+        state_b = self.sublight_b.get_state()
+        combo = (state_a, state_b)
 
-        if sublight_off_str in combo: # if at least one off
+        if load_off_str in combo:
+            # if at least one low...
 
-            if sublight_on_str not in combo: # neither one is on -> OFF
+            if load_on_str not in combo:
+                # neither one is high -> OFF
                 return light_off_str
-            else:  # at least one is on -> LOW
+            else:
+                # at least one is high -> LOW
                 return light_low_str
 
-        else:  # neither one is off -> HIGH
+        else:
+            # neither one is low -> HIGH
             return light_high_str
 
     def high(self):
-        self.set_mode(light_high_str)
+        self.set_state(light_high_str)
 
     def low(self):
-        self.set_mode(light_low_str)
+        self.set_state(light_low_str)
 
     def off(self):
-        self.set_mode(light_off_str)
+        self.set_state(light_off_str)
 
 
 class Zone:
@@ -343,17 +373,17 @@ class Zone:
         self.outlet_valve.close()
         self.control_valve.open()
         self.inlet_valve.open()
-        self.pump.on()
+        self.pump.high()
 
     def maintain(self):
 
-        self.pump.off()
+        self.pump.low()
         self.outlet_valve.close()
         self.inlet_valve.close()
         self.control_valve.close()
 
     def drain(self):
-        self.pump.off()
+        self.pump.low()
         self.inlet_valve.close()
         self.control_valve.open()
         self.outlet_valve.open()

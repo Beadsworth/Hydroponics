@@ -13,7 +13,7 @@ load6 = Valve(mega1, 42)
 load7 = Valve(mega1, 40)
 load8 = Valve(mega1, 38)
 relay1 = RelayBoard(mega1, 36)
-buzzer = Load(mega1, 34)
+buzzer = Output(mega1, 34)
 
 
 def buzz():
@@ -23,13 +23,13 @@ def buzz():
     now = time.time()
     try:
         while now - start < buzz_time:
-            buzzer.on()
+            buzzer.high()
             time.sleep(1 / Hz)
-            buzzer.off()
+            buzzer.low()
             time.sleep(1 / Hz)
             now = time.time()
     finally:
-        buzzer.off()
+        buzzer.low()
 
 
 def get_mega():

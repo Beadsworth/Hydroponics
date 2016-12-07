@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # imports
-from HydroLoads import Zone, Pump, Light, Valve, Sublight, Controller, RelayBoard
+from HydroLoads import Zone, Load, Light, Valve, Sublight, Controller, RelayBoard, Relay
 
 # general definitions
 FLOOD_TIME = 0
@@ -22,21 +22,22 @@ ZONE3_VALVE_PIN = 40
 OUTLET_VALVE_PIN = 38
 
 # enable relay boards
-relay1 = RelayBoard(mega, RELAY_BOARD_PIN)
+relayboard1 = RelayBoard(mega, RELAY_BOARD_PIN, 'relayboard1')
+relay1 = Relay(mega, 26, 'relay1')
 #  initialize Loads
-pump1 = Pump(mega, PUMP_PIN)
+pump1 = Load(mega, PUMP_PIN, 'pump1')
 # lights
-sublight_1A = Sublight(mega, LIGHT1A_PIN)
-sublight_1B = Sublight(mega, LIGHT1B_PIN)
+sublight_1A = Sublight(mega, LIGHT1A_PIN, 'sublight1A')
+sublight_1B = Sublight(mega, LIGHT1B_PIN, 'sublight1B')
 
 
-light1 = Light(sublight_1A, sublight_1B)
+light1 = Light(mega, sublight_1A, sublight_1B, 'light1')
 # valves
-inlet_valve = Valve(mega, INLET_VALVE_PIN)
-zone1_valve = Valve(mega, ZONE1_VALVE_PIN)
-zone2_valve = Valve(mega, ZONE2_VALVE_PIN)
-zone3_valve = Valve(mega, ZONE3_VALVE_PIN)
-outlet_valve = Valve(mega, OUTLET_VALVE_PIN)
+inlet_valve = Valve(mega, INLET_VALVE_PIN, 'inlet_valve')
+zone1_valve = Valve(mega, ZONE1_VALVE_PIN, 'zone1_valve')
+zone2_valve = Valve(mega, ZONE2_VALVE_PIN, 'zone2_valve')
+zone3_valve = Valve(mega, ZONE3_VALVE_PIN, 'zone3_valve')
+outlet_valve = Valve(mega, OUTLET_VALVE_PIN, 'outlet_valve')
 # initialize Zones
 zone1 = Zone("ZONE1", zone1_valve, inlet_valve, outlet_valve, pump1)
 zone2 = Zone("ZONE2", zone2_valve, inlet_valve, outlet_valve, pump1)

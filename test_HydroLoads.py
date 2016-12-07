@@ -18,7 +18,7 @@ led_white1 = Sublight(mega, 10)
 led_white2 = Sublight(mega, 11)
 
 relay1 = RelayBoard(mega, 2)
-buzzer = Load(mega, 3)
+buzzer = Output(mega, 3)
 
 sublight_1A = led_white1
 sublight_1B = led_white2
@@ -32,13 +32,13 @@ def buzz(Hz, sec):
     now = time.time()
     try:
         while now - start < sec:
-            buzzer.on()
+            buzzer.high()
             time.sleep(1 / Hz)
-            buzzer.off()
+            buzzer.low()
             time.sleep(1 / Hz)
             now = time.time()
     finally:
-        buzzer.off()
+        buzzer.low()
 
 
 # @unittest.skip("Skipping TestPump Class...")
@@ -79,13 +79,13 @@ class TestController(unittest.TestCase):
             temp = Component(mega, 13)
 
         with self.assertRaises(RuntimeError):
-            temp = Load(mega, 13)
+            temp = Output(mega, 13)
 
         with self.assertRaises(RuntimeError):
             temp = Valve(mega, 13)
 
         with self.assertRaises(RuntimeError):
-            temp = Pump(mega, 13)
+            temp = Load(mega, 13)
 
         with self.assertRaises(RuntimeError):
             temp = Sublight(mega, 13)
@@ -135,9 +135,9 @@ class TestLoad(unittest.TestCase):
     def test_valve(self):
         led_red.open()
         led_purple.open()
-        led_white1.on()
+        led_white1.high()
         led_purple.open()
-        # purple should close as white1 goes on
+        # purple should close as white1 goes high
         led_purple.close()
         mega.close_all_valves()
         led_blue.open()
@@ -170,27 +170,27 @@ class TestLight(unittest.TestCase):
         buzz(100, 0.5)
         mega.disconnect()
 
-    def test_light1(self):  # on -> off -> off, twice
+    def test_light1(self):  # high -> low -> low, twice
 
         pause_time = 0.5
 
         for i in range(2):
 
-            light1.set_mode(light_high_str)
+            light1.set_state(light_high_str)
             time.sleep(pause_time)
-            self.assertTrue(light1.get_mode() == light_high_str)
-            self.assertTrue(light1.sublight_a.get_mode() == sublight_on_str)
-            self.assertTrue(light1.sublight_b.get_mode() == sublight_on_str)
+            self.assertTrue(light1.get_state() == light_high_str)
+            self.assertTrue(light1.sublight_a.get_state() == sublight_on_str)
+            self.assertTrue(light1.sublight_b.get_state() == sublight_on_str)
 
-            light1.set_mode(light_low_str)
+            light1.set_state(light_low_str)
             time.sleep(pause_time)
-            self.assertTrue(light1.get_mode() == light_low_str)
+            self.assertTrue(light1.get_state() == light_low_str)
 
-            light1.set_mode(light_off_str)
+            light1.set_state(light_off_str)
             time.sleep(pause_time)
-            self.assertTrue(light1.get_mode() == light_off_str)
-            self.assertTrue(light1.sublight_a.get_mode() == sublight_off_str)
-            self.assertTrue(light1.sublight_b.get_mode() == sublight_off_str)
+            self.assertTrue(light1.get_state() == light_off_str)
+            self.assertTrue(light1.sublight_a.get_state() == sublight_off_str)
+            self.assertTrue(light1.sublight_b.get_state() == sublight_off_str)
 
     def test_low_blink(self):
 
@@ -199,9 +199,9 @@ class TestLight(unittest.TestCase):
 
         for i in range(10):
 
-            light1.set_mode(light_low_str)
+            light1.set_state(light_low_str)
             time.sleep(pause_time)
-            self.assertTrue(light1.get_mode() == light_low_str)
+            self.assertTrue(light1.get_state() == light_low_str)
             self.assertIsNot(light1.sublight_switch, previous_switch)
 
     def test_sublight_validity(self):
