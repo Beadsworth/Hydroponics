@@ -22,11 +22,11 @@ HIGH = 1
 RELAY_OPEN = HIGH
 RELAY_CLOSED = LOW
 
-DEFAULT_STATES = {default_low_str: LOW, default_high_str: HIGH}
+OUTPUT_STATES = {default_low_str: LOW, default_high_str: HIGH}
 RELAY_BOARD_STATES = {relay_disable_str: LOW, relay_enable_str: HIGH}
 RELAY_STATES = {relay_close_str: RELAY_CLOSED, relay_open_str: RELAY_OPEN}
 LOAD_STATES = {load_on_str: RELAY_CLOSED, load_off_str: RELAY_OPEN}
-SUBLIGHT_STATES = LOAD_STATES
+SUBLIGHT_STATES = LOAD_STATES.copy()
 VALVE_STATES = {valve_open_str: RELAY_CLOSED, valve_close_str: RELAY_OPEN}
 LIGHT_STATES = {light_off_str: 2, light_low_str: 1, light_high_str: 0}
 
@@ -58,8 +58,7 @@ class Controller:
             component.prepare()
             # all loads set to RELAY_OPEN before relay board enabled
             if isinstance(component, Relay):
-                pass
-                # component.open()
+                component.open()
 
         # turn high relay sub-board, enabling relay control
         time.sleep(0.5)
@@ -177,26 +176,25 @@ class Component:
 
 class Output(Component):
     """Digital output pin.  On or Off."""
-    def __init__(self, controller, pin, name):
-        Component.__init__(self, controller, pin, name)
-        # make state_dict first, make reverse in constructor.  If no states given, set default
-        if self.states is None:
-            self.states = DEFAULT_STATES
-        self.states_lookup = {v: k for k, v in self.states.items()}
+    # define states_lookup after states to block inheritance and key collision
+    states = OUTPUT_STATES
+    states_lookup = {v: k for k, v in states.items()}
 
     def set_state(self, target_state):
         self.controller.check_connection()
-        if target_state not in self.states:
+        if target_state not in self.__class__.states:
             raise ValueError('Invalid state setting for Output!')
 
-        self.pin_obj.write(self.states[target_state])
+        self.pin_obj.write(self.__class__.states[target_state])
         return None
 
     def get_state(self):
         self.controller.check_connection()
         # find status of pin (0 or 1) and return state-str
         status = self.pin_obj.read()
-        return self.states_lookup[str(status)]
+         # return self.__class__.states_lookup[str(status)]
+        # TODO fix this
+        return 0
 
     def high(self):
         self.set_state(default_high_str)
@@ -206,10 +204,10 @@ class Output(Component):
 
 
 class RelayBoard(Output):
-
-    def __init__(self, controller, pin, name):
-        self.states = RELAY_BOARD_STATES
-        Output.__init__(self, controller, pin, name)
+    # define states_lookup after states to block inheritance and key collision
+    states = RELAY_BOARD_STATES
+    states_lookup = {v: k for k, v in states.items()}
+    states.update(Output.states)
 
     def enable(self):
         self.set_state(relay_enable_str)
@@ -219,10 +217,10 @@ class RelayBoard(Output):
 
 
 class Relay(Output):
-    load_state1 = 2
-    def __init__(self, controller, pin, name):
-        self.states = RELAY_STATES
-        Output.__init__(self, controller, pin, name)
+    # define states_lookup after states to block inheritance and key collision
+    states = RELAY_STATES
+    states_lookup = {v: k for k, v in states.items()}
+    states.update(Output.states)
 
     def close(self):
         self.set_state(relay_close_str)
@@ -232,11 +230,10 @@ class Relay(Output):
 
 
 class Load(Relay):
-
+    # define states_lookup after states to block inheritance and key collision
     states = LOAD_STATES
-
-    def __init__(self, controller, pin, name):
-        Output.__init__(self, controller, pin, name)
+    states_lookup = {v: k for k, v in states.items()}
+    states.update(Relay.states)
 
     def off(self):
         self.set_state(load_off_str)
@@ -246,20 +243,17 @@ class Load(Relay):
 
 
 class Sublight(Load):
-
+    # define states_lookup after states to block inheritance and key collision
     states = SUBLIGHT_STATES
-
-    def __init__(self, controller, pin, name):
-        Output.__init__(self, controller, pin, name)
+    states_lookup = {v: k for k, v in states.items()}
+    states.update(Load.states)
 
 
 class Valve(Relay):
-
+    # define states_lookup after states to block inheritance and key collision
     states = VALVE_STATES
-
-    def __init__(self, controller, pin, name):
-
-        Output.__init__(self, controller, pin, name)
+    states_lookup = {v: k for k, v in states.items()}
+    states.update(Relay.states)
 
     def set_state(self, target_state):
         # if valve already in this state, do nothing
