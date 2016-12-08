@@ -4,41 +4,11 @@ import unittest
 import time
 
 from pyfirmata import PinAlreadyTakenError
-from HydroLoads import *
+from HydroLoads import light_high_str, light_low_str, light_off_str, relay_on_str, relay_off_str
+import HydroLoads
+import quick
 
-addr = '/dev/ttyACM0'
-mega = Controller(addr)
-led_red = Valve(mega, 4)
-led_orange = Valve(mega, 5)
-led_yellow = Valve(mega, 6)
-led_green = Valve(mega, 7)
-led_blue = Valve(mega, 8)
-led_purple = Valve(mega, 9)
-led_white1 = Sublight(mega, 10)
-led_white2 = Sublight(mega, 11)
-
-relay1 = RelayBoard(mega, 2)
-buzzer = Output(mega, 3)
-
-sublight_1A = led_white1
-sublight_1B = led_white2
-
-light1 = Light(sublight_1A, sublight_1B)
-
-
-def buzz(Hz, sec):
-
-    start = time.time()
-    now = time.time()
-    try:
-        while now - start < sec:
-            buzzer.high()
-            time.sleep(1 / Hz)
-            buzzer.low()
-            time.sleep(1 / Hz)
-            now = time.time()
-    finally:
-        buzzer.low()
+mega = quick.get_mega()
 
 
 # @unittest.skip("Skipping TestPump Class...")
@@ -61,34 +31,31 @@ class TestController(unittest.TestCase):
 
     def setUp(self):
         mega.connect()
-        mega.clear_pins()
 
     def tearDown(self):
-        buzz(100, 0.5)
+        quick.buzz()
         mega.disconnect()
 
     # @unittest.skip("Skipping test")
     def test_reconnect(self):
         mega.reconnect()
 
-    def test_all_pins_low(self):
-        mega.clear_pins()
-
     def test_adding_when_connected(self):
-        with self.assertRaises(RuntimeError):
-            temp = Component(mega, 13)
 
         with self.assertRaises(RuntimeError):
-            temp = Output(mega, 13)
+            temp = HydroLoads.Component(mega, 13, 'test1')
 
         with self.assertRaises(RuntimeError):
-            temp = Valve(mega, 13)
+            temp = HydroLoads.Valve(mega, 13, 'test3')
 
         with self.assertRaises(RuntimeError):
-            temp = Load(mega, 13)
+            temp = HydroLoads.Relay(mega, 13, 'test4')
 
         with self.assertRaises(RuntimeError):
-            temp = Sublight(mega, 13)
+            temp = HydroLoads.RelayBoard(mega, 13, 'test5')
+
+        with self.assertRaises(RuntimeError):
+            temp = HydroLoads.Light(mega, 12, 13, 'test5')
 
 
 # @unittest.skip("Skipping TestLight Class...")
@@ -103,10 +70,9 @@ class TestLoad(unittest.TestCase):
 
     def setUp(self):
         mega.connect()
-        mega.clear_pins()
 
     def tearDown(self):
-        buzz(100, 0.5)
+        quick.buzz()
         mega.disconnect()
 
     # @unittest.skip("Skipping test")
@@ -114,8 +80,8 @@ class TestLoad(unittest.TestCase):
         mega.disconnect()
 
         with self.assertRaises(PinAlreadyTakenError):
-            temp1 = Component(mega, 13)
-            temp2 = Component(mega, 13)
+            temp1 = HydroLoads.Component(mega, 30, 'hi')
+            temp2 = HydroLoads.Component(mega, 30, 'bye')
             mega.connect()
 
         mega.components.remove(temp1)
@@ -126,27 +92,26 @@ class TestLoad(unittest.TestCase):
 
     def test_relay(self):
 
+        mega.open_all_valves()
         time.sleep(0.5)
-        relay1.disable()
+        mega.disable_all_relays()
         time.sleep(0.5)
         mega.enable_all_relays()
         time.sleep(0.5)
+        mega.close_all_valves()
 
     def test_valve(self):
-        led_red.open()
-        led_purple.open()
-        led_white1.high()
-        led_purple.open()
-        # purple should close as white1 goes high
-        led_purple.close()
+        quick.inlet_valve.open()
+        quick.outlet_valve.open()
+        quick.light1.high()
+        quick.inlet_valve.close()
+        quick.outlet_valve.close()
         mega.close_all_valves()
-        led_blue.open()
 
     def test_emer_off(self):
-        led_blue.open()
-        led_yellow.open()
-        led_red.open()
-        light1.high()
+        mega.open_all_valves()
+        quick.light1.high()
+        quick.pump1.high()
         time.sleep(2)
         mega.emergency_off()
 
@@ -164,10 +129,9 @@ class TestLight(unittest.TestCase):
 
     def setUp(self):
         mega.connect()
-        mega.clear_pins()
 
     def tearDown(self):
-        buzz(100, 0.5)
+        quick.buzz()
         mega.disconnect()
 
     def test_light1(self):  # high -> low -> low, twice
@@ -176,61 +140,31 @@ class TestLight(unittest.TestCase):
 
         for i in range(2):
 
-            light1.set_state(light_high_str)
+            quick.light1.set_state(light_high_str)
             time.sleep(pause_time)
-            self.assertTrue(light1.get_state() == light_high_str)
-            self.assertTrue(light1.sublight_a.get_state() == sublight_on_str)
-            self.assertTrue(light1.sublight_b.get_state() == sublight_on_str)
+            self.assertTrue(quick.light1.get_state() == light_high_str)
+            self.assertTrue(quick.light1.sublight_a.get_state() == relay_on_str)
+            self.assertTrue(quick.light1.sublight_b.get_state() == relay_on_str)
 
-            light1.set_state(light_low_str)
+            quick.light1.set_state(light_low_str)
             time.sleep(pause_time)
-            self.assertTrue(light1.get_state() == light_low_str)
+            self.assertTrue(quick.light1.get_state() == light_low_str)
 
-            light1.set_state(light_off_str)
+            quick.light1.set_state(light_off_str)
             time.sleep(pause_time)
-            self.assertTrue(light1.get_state() == light_off_str)
-            self.assertTrue(light1.sublight_a.get_state() == sublight_off_str)
-            self.assertTrue(light1.sublight_b.get_state() == sublight_off_str)
+            self.assertTrue(quick.light1.get_state() == light_off_str)
+            self.assertTrue(quick.light1.sublight_a.get_state() == relay_off_str)
+            self.assertTrue(quick.light1.sublight_b.get_state() == relay_off_str)
 
     def test_low_blink(self):
 
         pause_time = 0.2
-        previous_switch = None
 
         for i in range(10):
 
-            light1.set_state(light_low_str)
+            quick.light1.set_state(light_low_str)
             time.sleep(pause_time)
-            self.assertTrue(light1.get_state() == light_low_str)
-            self.assertIsNot(light1.sublight_switch, previous_switch)
-
-    def test_sublight_validity(self):
-
-        mega.disconnect()
-
-        good_light1 = led_white1
-        good_light2 = led_white2
-        bad_light1 = 'hello'
-        bad_light2 = Valve(mega, 13)
-
-        with self.assertRaises(TypeError):
-            Light(good_light1, bad_light1)
-
-        with self.assertRaises(TypeError):
-            Light(bad_light2, good_light2)
-
-        with self.assertRaises(TypeError):
-            Light(bad_light1, bad_light2)
-
-        with self.assertRaises(RuntimeError):
-            Light(good_light1, good_light1)
-
-        # next one should pass
-        lightc = Light(good_light1, good_light2)
-
-        mega.connect()
-
-        lightc.high()
+            self.assertTrue(quick.light1.get_state() == light_low_str)
 
 
 if __name__ == '__main__':

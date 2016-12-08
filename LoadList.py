@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # imports
-from HydroLoads import Zone, Load, Light, Valve, Sublight, Controller, RelayBoard, Relay
+from HydroLoads import Zone, Light, Valve, Controller, RelayBoard, Relay
 
 # general definitions
 FLOOD_TIME = 0
@@ -25,13 +25,9 @@ OUTLET_VALVE_PIN = 38
 relayboard1 = RelayBoard(mega, RELAY_BOARD_PIN, 'relayboard1')
 relay1 = Relay(mega, 26, 'relay1')
 #  initialize Loads
-pump1 = Load(mega, PUMP_PIN, 'pump1')
+pump1 = Relay(mega, PUMP_PIN, 'pump1')
 # lights
-sublight_1A = Sublight(mega, LIGHT1A_PIN, 'sublight1A')
-sublight_1B = Sublight(mega, LIGHT1B_PIN, 'sublight1B')
-
-
-light1 = Light(mega, sublight_1A, sublight_1B, 'light1')
+light1 = Light(mega, LIGHT1A_PIN, LIGHT1B_PIN, 'light1')
 # valves
 inlet_valve = Valve(mega, INLET_VALVE_PIN, 'inlet_valve')
 zone1_valve = Valve(mega, ZONE1_VALVE_PIN, 'zone1_valve')
