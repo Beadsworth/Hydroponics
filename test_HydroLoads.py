@@ -6,9 +6,9 @@ import time
 from pyfirmata import PinAlreadyTakenError
 from HydroLoads import light_high_str, light_low_str, light_off_str, relay_on_str, relay_off_str
 import HydroLoads
-import quick
+import console
 
-mega = quick.get_arduino()
+mega = console.get_arduino()
 
 
 # @unittest.skip("Skipping TestPump Class...")
@@ -33,7 +33,7 @@ class TestController(unittest.TestCase):
         mega.connect()
 
     def tearDown(self):
-        quick.buzz()
+        console.buzz()
         mega.disconnect()
 
     # @unittest.skip("Skipping test")
@@ -72,7 +72,7 @@ class TestLoad(unittest.TestCase):
         mega.connect()
 
     def tearDown(self):
-        quick.buzz()
+        console.buzz()
         mega.disconnect()
 
     # @unittest.skip("Skipping test")
@@ -101,17 +101,17 @@ class TestLoad(unittest.TestCase):
         mega.close_all_valves()
 
     def test_valve(self):
-        quick.inlet_valve.open()
-        quick.outlet_valve.open()
-        quick.light1.high()
-        quick.inlet_valve.close()
-        quick.outlet_valve.close()
+        console.inlet_valve.open()
+        console.outlet_valve.open()
+        console.light1.high()
+        console.inlet_valve.close()
+        console.outlet_valve.close()
         mega.close_all_valves()
 
     def test_emer_off(self):
         mega.open_all_valves()
-        quick.light1.high()
-        quick.pump1.high()
+        console.light1.high()
+        console.pump1.high()
         time.sleep(2)
         mega.emergency_off()
 
@@ -131,7 +131,7 @@ class TestLight(unittest.TestCase):
         mega.connect()
 
     def tearDown(self):
-        quick.buzz()
+        console.buzz()
         mega.disconnect()
 
     def test_light1(self):  # high -> low -> low, twice
@@ -140,21 +140,21 @@ class TestLight(unittest.TestCase):
 
         for i in range(2):
 
-            quick.light1.set_state(light_high_str)
+            console.light1.set_state(light_high_str)
             time.sleep(pause_time)
-            self.assertTrue(quick.light1.get_state() == light_high_str)
-            self.assertTrue(quick.light1.sublight_a.get_state() == relay_on_str)
-            self.assertTrue(quick.light1.sublight_b.get_state() == relay_on_str)
+            self.assertTrue(console.light1.get_state() == light_high_str)
+            self.assertTrue(console.light1.sublight_a.get_state() == relay_on_str)
+            self.assertTrue(console.light1.sublight_b.get_state() == relay_on_str)
 
-            quick.light1.set_state(light_low_str)
+            console.light1.set_state(light_low_str)
             time.sleep(pause_time)
-            self.assertTrue(quick.light1.get_state() == light_low_str)
+            self.assertTrue(console.light1.get_state() == light_low_str)
 
-            quick.light1.set_state(light_off_str)
+            console.light1.set_state(light_off_str)
             time.sleep(pause_time)
-            self.assertTrue(quick.light1.get_state() == light_off_str)
-            self.assertTrue(quick.light1.sublight_a.get_state() == relay_off_str)
-            self.assertTrue(quick.light1.sublight_b.get_state() == relay_off_str)
+            self.assertTrue(console.light1.get_state() == light_off_str)
+            self.assertTrue(console.light1.sublight_a.get_state() == relay_off_str)
+            self.assertTrue(console.light1.sublight_b.get_state() == relay_off_str)
 
     def test_low_blink(self):
 
@@ -162,9 +162,9 @@ class TestLight(unittest.TestCase):
 
         for i in range(10):
 
-            quick.light1.set_state(light_low_str)
+            console.light1.set_state(light_low_str)
             time.sleep(pause_time)
-            self.assertTrue(quick.light1.get_state() == light_low_str)
+            self.assertTrue(console.light1.get_state() == light_low_str)
 
 
 if __name__ == '__main__':
