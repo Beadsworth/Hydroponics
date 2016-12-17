@@ -1,10 +1,10 @@
-from pyfirmata import ArduinoMega, util, PWM
+from pyfirmata import ArduinoMega, util, PWM, Arduino
 import time
 
 default_high_str = 'HIGH'
 default_low_str = 'LOW'
-relay_off_str = 'RELAY_OPEN'
-relay_on_str = 'RELAY_CLOSE'
+relay_off_str = 'RELAY_OFF'
+relay_on_str = 'RELAY_ON'
 relay_disable_str = 'RELAY_DISABLE'
 relay_enable_str = 'RELAY_ENABLE'
 load_off_str = 'LOAD_OFF'
@@ -15,7 +15,7 @@ light_off_str = 'LIGHT_OFF'
 light_low_str = 'LIGHT_LOW'
 light_high_str = 'LIGHT_HIGH'
 
-VALVE_PAUSE = 1
+VALVE_PAUSE = 5
 
 LOW = 0
 HIGH = 1
@@ -46,7 +46,8 @@ class Controller:
             print('Already connected!')
             return
         print('Connecting to controller board...')
-        self.board = ArduinoMega(self.board_addr)
+        # TODO change back to ArduinoMega
+        self.board = Arduino(self.board_addr)
         self.it = util.Iterator(self.board)
         self.it.start()
         self.active = True
@@ -81,7 +82,7 @@ class Controller:
         for component in self.components:
             # all loads set to RELAY_OPEN
             if isinstance(component, Load):
-                component.pin_obj.write(RELAY_OPEN)
+                component.low()
 
             # set all pin_obj to None
             component.pin_obj = None

@@ -1,33 +1,21 @@
-import time
+#!/usr/bin/env python
 
 from LoadList import *
 
-"""DOES NOT EXIT CLEANLY!"""
+if __name__ == '__main__':
 
+    ard.connect()
 
-
-def buzz():
-    Hz = 200
-    buzz_time = 0.5
-    start = time.time()
-    now = time.time()
     try:
-        while now - start < buzz_time:
-            buzzer.high()
-            time.sleep(1 / Hz)
-            buzzer.low()
-            time.sleep(1 / Hz)
-            now = time.time()
+        while True:
+            task = input('>>>')
+            if task is None or task.lower() == "exit()":
+                break
+            elif task == '':
+                pass
+            else:
+                eval(task)
     finally:
-        buzzer.low()
+        ard.disconnect()
 
-
-def get_mega():
-
-    mega.connect()
-    return mega
-
-
-buzzer = Relay(mega, 34, 'buzzer')
-mega = get_mega()
-
+    print("Done!")

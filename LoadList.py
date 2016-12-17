@@ -1,46 +1,32 @@
 #!/usr/bin/env python
 # imports
-from HydroLoads import Zone, Light, Valve, Controller, RelayBoard, Relay
-
-# general definitions
-FLOOD_TIME = 0
-DRAIN_TIME = 0
+from HydroLoads import Load, Controller
 
 # controller info
 addr = '/dev/ttyACM0'
-mega = Controller(addr)
+ard = Controller(addr)
 
 # define pin locations
-RELAY_BOARD_PIN = 36
-PUMP_PIN = 48
-LIGHT1A_PIN = 52
-LIGHT1B_PIN = 50
-INLET_VALVE_PIN = 46
-ZONE1_VALVE_PIN = 44
-ZONE2_VALVE_PIN = 42
-ZONE3_VALVE_PIN = 40
-OUTLET_VALVE_PIN = 38
+LED_RED = 2
+LED_ORANGE = 3
+LED_YELLOW = 4
+LED_GREEN = 5
+LED_BLUE = 6
+LED_PURPLE = 7
+LED_WHITE1 = 8
+LED_WHITE2 = 9
 
-# enable relay boards
-relayboard1 = RelayBoard(mega, RELAY_BOARD_PIN, 'relayboard1')
-relay1 = Relay(mega, 26, 'relay1')
-#  initialize Loads
-pump1 = Relay(mega, PUMP_PIN, 'pump1')
-# lights
-light1 = Light(mega, LIGHT1A_PIN, LIGHT1B_PIN, 'light1')
-# valves
-inlet_valve = Valve(mega, INLET_VALVE_PIN, 'inlet_valve')
-zone1_valve = Valve(mega, ZONE1_VALVE_PIN, 'zone1_valve')
-zone2_valve = Valve(mega, ZONE2_VALVE_PIN, 'zone2_valve')
-zone3_valve = Valve(mega, ZONE3_VALVE_PIN, 'zone3_valve')
-outlet_valve = Valve(mega, OUTLET_VALVE_PIN, 'outlet_valve')
-# initialize Zones
-zone1 = Zone("ZONE1", zone1_valve, inlet_valve, outlet_valve, pump1)
-zone2 = Zone("ZONE2", zone2_valve, inlet_valve, outlet_valve, pump1)
-zone3 = Zone("ZONE3", zone3_valve, inlet_valve, outlet_valve, pump1)
+# leds
+red = Load(ard, LED_RED, 'red')
+orange = Load(ard, LED_ORANGE, 'orange')
+yellow = Load(ard, LED_YELLOW, 'yellow')
+green = Load(ard, LED_GREEN, 'green')
+blue = Load(ard, LED_BLUE, 'blue')
+purple = Load(ard, LED_PURPLE, 'purple')
+white1 = Load(ard, LED_WHITE1, 'white1')
+white2 = Load(ard, LED_WHITE2, 'white2')
 
-controllers = mega,
-zones = zone1, zone2, zone3,
+controllers = ard,
 
 
 if __name__ == '__main__':

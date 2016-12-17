@@ -8,7 +8,7 @@ from HydroLoads import light_high_str, light_low_str, light_off_str, relay_on_st
 import HydroLoads
 import quick
 
-mega = quick.get_mega()
+mega = quick.get_arduino()
 
 
 # @unittest.skip("Skipping TestPump Class...")
