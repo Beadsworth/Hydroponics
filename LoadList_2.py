@@ -11,15 +11,15 @@ addr = '/dev/ttyACM0'
 ard = Controller(addr)
 
 # define pin locations
-RELAY_BOARD_PIN = 2
-PUMP_PIN = 3
-LIGHT1A_PIN = 4
-LIGHT1B_PIN = 5
-INLET_VALVE_PIN = 8
-ZONE1_VALVE_PIN = 10
-ZONE2_VALVE_PIN = 6
-ZONE3_VALVE_PIN = 7
-OUTLET_VALVE_PIN = 9
+RELAY_BOARD_PIN = 36
+PUMP_PIN = 42
+LIGHT1A_PIN = 40
+LIGHT1B_PIN = 38
+INLET_VALVE_PIN = 52
+ZONE1_VALVE_PIN = 50
+ZONE2_VALVE_PIN = 48
+ZONE3_VALVE_PIN = 46
+OUTLET_VALVE_PIN = 44
 
 # enable relay boards
 relayboard1 = RelayBoard(ard, RELAY_BOARD_PIN, 'relayboard1')

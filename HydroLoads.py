@@ -47,7 +47,7 @@ class Controller:
             return
         print('Connecting to controller board...')
         # TODO change back to ArduinoMega
-        self.board = Arduino(self.board_addr)
+        self.board = ArduinoMega(self.board_addr)
         self.it = util.Iterator(self.board)
         self.it.start()
         self.active = True
@@ -178,7 +178,7 @@ class Component:
 class Load(Component):
     """Digital output pin.  On or Off."""
     # define states_lookup after states to block inheritance and key collision
-    states = LOAD_STATES
+    states = LOAD_STATES.copy()
     states_lookup = {v: k for k, v in states.items()}
 
     def set_state(self, target_state):
@@ -205,7 +205,7 @@ class Load(Component):
 
 class RelayBoard(Load):
     # define states_lookup after states to block inheritance and key collision
-    states = RELAY_BOARD_STATES
+    states = RELAY_BOARD_STATES.copy()
     states_lookup = {v: k for k, v in states.items()}
     states.update(Load.states)
 
@@ -218,7 +218,7 @@ class RelayBoard(Load):
 
 class Relay(Load):
     # define states_lookup after states to block inheritance and key collision
-    states = RELAY_STATES
+    states = RELAY_STATES.copy()
     states_lookup = {v: k for k, v in states.items()}
     states.update(Load.states)
 
@@ -231,7 +231,7 @@ class Relay(Load):
 
 class Valve(Relay):
     # define states_lookup after states to block inheritance and key collision
-    states = VALVE_STATES
+    states = VALVE_STATES.copy()
     states_lookup = {v: k for k, v in states.items()}
     states.update(Relay.states)
 
@@ -241,7 +241,9 @@ class Valve(Relay):
             return
         else:
             Load.set_state(self, target_state)
-            self.controller.board.pass_time(VALVE_PAUSE)
+            # only pause if valve state is called
+            if target_state in VALVE_STATES:
+                self.controller.board.pass_time(VALVE_PAUSE)
 
     def open(self):
         self.set_state(valve_open_str)
@@ -252,7 +254,7 @@ class Valve(Relay):
 
 class Light:
 
-    states = LIGHT_STATES
+    states = LIGHT_STATES.copy()
 
     def __init__(self, controller, pin_a, pin_b, name):
 

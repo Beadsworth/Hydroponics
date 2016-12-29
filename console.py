@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from LoadList import *
+from LoadList_2 import *
 
 
 def quit():
