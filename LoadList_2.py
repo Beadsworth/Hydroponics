@@ -23,6 +23,7 @@ OUTLET_VALVE_PIN = 44
 
 # enable relay boards
 relayboard1 = RelayBoard(ard, RELAY_BOARD_PIN, 'relayboard1')
+
 #  initialize Loads
 pump1 = Relay(ard, PUMP_PIN, 'pump1')
 # lights
