@@ -11,36 +11,43 @@ addr = '/dev/ttyACM0'
 ard = Controller(addr)
 
 # define pin locations
-RELAY_BOARD_PIN = 36
-PUMP_PIN = 42
-LIGHT1A_PIN = 40
-LIGHT1B_PIN = 38
-INLET_VALVE_PIN = 52
-ZONE1_VALVE_PIN = 50
-ZONE2_VALVE_PIN = 48
-ZONE3_VALVE_PIN = 46
-OUTLET_VALVE_PIN = 44
+BOX_BOARD_PIN = 36
+BOX1_PIN = 52
+BOX2_PIN = 50
+BOX3_PIN = 48
+BOX4_PIN = 46
+BOX5_PIN = 44
+BOX6_PIN = 42
+BOX7_PIN = 40
+BOX8_PIN = 38
 
-# enable relay boards
-relayboard1 = RelayBoard(ard, RELAY_BOARD_PIN, 'relayboard1')
+PLUG_BOARD_PIN = 45
+PLUG1_PIN = 47
+PLUG2_PIN = 49
+PLUG3_PIN = 53
+PLUG4_PIN = 51
 
-#  initialize Loads
-pump1 = Relay(ard, PUMP_PIN, 'pump1')
-# lights
-light1 = Light(ard, LIGHT1A_PIN, LIGHT1B_PIN, 'light1')
-# valves
-inlet_valve = Valve(ard, INLET_VALVE_PIN, 'inlet_valve')
-zone1_valve = Valve(ard, ZONE1_VALVE_PIN, 'zone1_valve')
-zone2_valve = Valve(ard, ZONE2_VALVE_PIN, 'zone2_valve')
-zone3_valve = Valve(ard, ZONE3_VALVE_PIN, 'zone3_valve')
-outlet_valve = Valve(ard, OUTLET_VALVE_PIN, 'outlet_valve')
-# initialize Zones
-zone1 = Zone("ZONE1", zone1_valve, inlet_valve, outlet_valve, pump1)
-zone2 = Zone("ZONE2", zone2_valve, inlet_valve, outlet_valve, pump1)
-zone3 = Zone("ZONE3", zone3_valve, inlet_valve, outlet_valve, pump1)
+# RelayBoards
+box_board = RelayBoard(ard, BOX_BOARD_PIN, 'box_board')
+plug_board = RelayBoard(ard, PLUG_BOARD_PIN, 'plug_board')
 
+#  Loads
+inlet_valve = Valve(ard, BOX1_PIN, 'box1')
+zone1_valve = Valve(ard, BOX2_PIN, 'box2')
+outlet_valve = Valve(ard, BOX3_PIN, 'box3')
+box4 = Relay(ard, BOX4_PIN, 'box4')
+box5 = Relay(ard, BOX5_PIN, 'box5')
+box6 = Relay(ard, BOX6_PIN, 'box6')
+box7 = Relay(ard, BOX7_PIN, 'box7')
+box8 = Relay(ard, BOX8_PIN, 'box8')
+
+plug1 = Relay(ard, PLUG1_PIN, 'plug1')
+pump = Relay(ard, PLUG2_PIN, 'plug2')
+plug3 = Relay(ard, PLUG3_PIN, 'plug3')
+plug4 = Relay(ard, PLUG4_PIN, 'plug4')
+
+zone1 = Zone('zone1', zone1_valve, inlet_valve, outlet_valve, pump)
 controllers = ard,
-zones = zone1, zone2, zone3,
 
 
 if __name__ == '__main__':
