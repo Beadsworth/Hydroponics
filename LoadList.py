@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # imports
-from HydroLoads import Load, Controller
+from HydroLoads import Load, Controller, DigitalSensor
 
 # controller info
 addr = '/dev/ttyACM0'
@@ -25,6 +25,8 @@ blue = Load(ard, LED_BLUE, 'blue')
 purple = Load(ard, LED_PURPLE, 'purple')
 white1 = Load(ard, LED_WHITE1, 'white1')
 white2 = Load(ard, LED_WHITE2, 'white2')
+
+level = DigitalSensor(ard, 12, 'level_sensor')
 
 controllers = ard,
 

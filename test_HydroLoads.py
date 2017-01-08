@@ -43,7 +43,7 @@ class TestController(unittest.TestCase):
     def test_adding_when_connected(self):
 
         with self.assertRaises(RuntimeError):
-            temp = HydroLoads.Component(mega, 13, 'test1')
+            temp = HydroLoads.Element(mega, 13, 'test1')
 
         with self.assertRaises(RuntimeError):
             temp = HydroLoads.Valve(mega, 13, 'test3')
@@ -80,8 +80,8 @@ class TestLoad(unittest.TestCase):
         mega.disconnect()
 
         with self.assertRaises(PinAlreadyTakenError):
-            temp1 = HydroLoads.Component(mega, 30, 'hi')
-            temp2 = HydroLoads.Component(mega, 30, 'bye')
+            temp1 = HydroLoads.Element(mega, 30, 'hi')
+            temp2 = HydroLoads.Element(mega, 30, 'bye')
             mega.connect()
 
         mega.components.remove(temp1)

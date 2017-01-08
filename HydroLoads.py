@@ -1,70 +1,58 @@
-from pyfirmata import ArduinoMega, util, PWM, Arduino
+from pyfirmata import ArduinoMega, util, PWM, Arduino, INPUT, ANALOG
 import time
-
-default_high_str = 'HIGH'
-default_low_str = 'LOW'
-relay_off_str = 'RELAY_OFF'
-relay_on_str = 'RELAY_ON'
-relay_disable_str = 'RELAY_DISABLE'
-relay_enable_str = 'RELAY_ENABLE'
-load_off_str = 'LOAD_OFF'
-load_on_str = 'LOAD_ON'
-valve_close_str = 'VALVE_CLOSE'
-valve_open_str = 'VALVE_OPEN'
-light_off_str = 'LIGHT_OFF'
-light_low_str = 'LIGHT_LOW'
-light_high_str = 'LIGHT_HIGH'
-
-VALVE_PAUSE = 5
 
 LOW = 0
 HIGH = 1
 RELAY_OPEN = HIGH
 RELAY_CLOSED = LOW
 
-LOAD_STATES = {default_low_str: LOW, default_high_str: HIGH}
-RELAY_BOARD_STATES = {relay_disable_str: LOW, relay_enable_str: HIGH}
-RELAY_STATES = {relay_on_str: RELAY_CLOSED, relay_off_str: RELAY_OPEN}
-VALVE_STATES = {valve_open_str: RELAY_CLOSED, valve_close_str: RELAY_OPEN}
-LIGHT_STATES = {light_off_str: 2, light_low_str: 1, light_high_str: 0}
-
 
 class Controller:
-    """Board that controls components.  Each board needs its own session.  First initialize controller, then components,
+    """Board that controls elements.  Each board needs its own session.  First initialize controller, then elements,
     then connect."""
     def __init__(self, board_addr):
-        self.board_addr = board_addr
-        self.board = None
-        self.it = None
-        self.components = []
-        self.active = False
+        self._board_addr = board_addr
+        self._board = None
+        self._it = None
+        self._elements = []
+        self._active = False
 
-        # self.connect()
+    @property
+    def board(self):
+        return self._board
+
+    @property
+    def elements(self):
+        return self._elements
+
+    @property
+    def active(self):
+        return self._active
 
     def connect(self):
-        if self.active:
+        if self._active:
             print('Already connected!')
             return
         print('Connecting to controller board...')
         # TODO change back to ArduinoMega
-        self.board = ArduinoMega(self.board_addr)
-        self.it = util.Iterator(self.board)
-        self.it.start()
-        self.active = True
+        self._board = Arduino(self._board_addr)
+        self._it = util.Iterator(self._board)
+        self._it.start()
+        self._active = True
 
-        for component in [comp for comp in self.components if isinstance(comp, Component)]:
+        for element in [elem for elem in self._elements if isinstance(elem, Element)]:
             # prepare all pin_objs after board connects
-            component.prepare()
-            # all loads set to RELAY_OPEN before relay board enabled
-            if isinstance(component, Relay):
-                component.off()
+            element.prepare()
+            # all loads set to 'OFF' before relay board enabled
+            if isinstance(element, Relay):
+                element.state = 'OFF'
 
-        # turn high relay sub-board, enabling relay control
+        # turn on relay sub-board, enabling relay control
         time.sleep(0.5)
         self.enable_all_relays()
 
-        #for sensor in self.sensors:
-         #   self.board.analog[sensor.pin].enable_reporting
+        # for sensor in self.sensors:
+        # self.board.analog[sensor.pin].enable_reporting
 
         print('Connection successful!')
 
@@ -75,22 +63,21 @@ class Controller:
         #  self.board.analog[sensor.pin].disable_reporting
 
         # disable all relay sub-boards
-        self.close_all_valves()
         self.disable_all_relays()
 
         # set all load pins to LOW
-        for component in self.components:
+        for element in self._elements:
             # all loads set to RELAY_OPEN
-            if isinstance(component, Load):
-                component.low()
+            if isinstance(element, Load):
+                element.state = 'LOW'
 
             # set all pin_obj to None
-            component.pin_obj = None
+            element._pin_obj = None
 
-        self.it = None
-        self.active = False
-        self.board.exit()
-        self.board = None
+        self._it = None
+        self._active = False
+        self._board.exit()
+        self._board = None
         print('Disconnected!')
 
     def reconnect(self):
@@ -100,279 +87,132 @@ class Controller:
         self.connect()
 
     def check_connection(self):
-        if self.active is False:
+        if self._active is False:
             raise RuntimeError('Controller not connected!')
-
-    def component_name_check(self, name_str):
-        if name_str in [component.name for component in self.components]:
-            raise RuntimeError('Multiple Components have the same name: \"' + name_str + '\"')
 
     def enable_all_relays(self):
         self.check_connection()
-        for component in self.components:
-            if isinstance(component, RelayBoard):
-                component.enable()
+        for element in self._elements:
+            if isinstance(element, RelayBoard):
+                element.state = 'ENABLE'
 
     def disable_all_relays(self):
         self.check_connection()
-        for component in self.components:
-            if isinstance(component, RelayBoard):
-                component.disable()
-
-    def close_all_valves(self):
-        """set all Valves to closed position"""
-        self.check_connection()
-        for component in self.components:
-            if isinstance(component, Valve):
-                component.close()
-
-    def open_all_valves(self):
-        """set all Valves to closed position"""
-        self.check_connection()
-        for component in self.components:
-            if isinstance(component, Valve):
-                component.open()
-
-    def emergency_off(self):
-        """turn low loads, on all valves"""
-        self.check_connection()
-        for component in self.components:
-            # skip valves
-            if isinstance(component, Valve):
-                continue
-            # if component attached to relay, but is not a valve
-            elif isinstance(component, Relay):
-                component.off()
-            # for loads that are not valves, relays, or relayboards, set low
-            elif isinstance(component, Load) and not isinstance(component, RelayBoard):
-                component.low()
-
-        self.close_all_valves()
-        self.disable_all_relays()
+        for element in self._elements:
+            if isinstance(element, RelayBoard):
+                element.state = 'DISABLE'
 
 
-class Component:
-    """Superclass, mostly to prevent adding/removing components while Controller is active."""
+class Element:
+    """Superclass, mostly to prevent adding/removing elements while Controller is active."""
     def __init__(self, controller, pin, name):
 
-        controller.component_name_check(name)
-        self.controller = controller
-        self.pin = pin
-        self.name = name
+        if name in [element.name for element in controller.elements]:
+            raise RuntimeError('There is already an element with name: \"' + name + '\"')
+
+        self._controller = controller
+        self._pin = pin
+        self._name = name
 
         # board must be inactive to initialize and add a load
-        if self.controller.active is True:
-            raise RuntimeError('Controller already active!  Cannot add more components while board is active.  '
-                               'Disconnect before adding components.')
+        if self._controller.active:
+            raise RuntimeError('Controller already active!  Cannot add more elements while board is active.  '
+                               'Disconnect before adding elements.')
 
-        self.pin_obj = None
-        self.controller.components.append(self)
+        self._pin_obj = None
+        self._controller.elements.append(self)
+
+    @property
+    def controller(self):
+        return self._controller
+
+    @property
+    def name(self):
+        return self._name
 
     def prepare(self):
         """Initialize pin_obj after board is active"""
-        self.controller.check_connection()
-        self.pin_obj = self.controller.board.get_pin('d:' + str(self.pin) + ':o')
-        self.pin_obj.write(LOW)
+        self._controller.check_connection()
+        self._pin_obj = self._controller.board.get_pin('d:' + str(self._pin) + ':o')
+        self._pin_obj.write(LOW)
 
 
-class Load(Component):
+class Load(Element):
     """Digital output pin.  On or Off."""
     # define states_lookup after states to block inheritance and key collision
-    states = LOAD_STATES.copy()
+    states = {
+        'LOW': LOW,
+        'HIGH': HIGH
+    }
     states_lookup = {v: k for k, v in states.items()}
 
-    def set_state(self, target_state):
-        self.controller.check_connection()
-        if target_state not in self.__class__.states:
-            raise ValueError('Invalid state setting for Load!')
-
-        self.pin_obj.write(self.__class__.states[target_state])
-        return None
-
-    def get_state(self):
-        self.controller.check_connection()
-        # find status of pin (0 or 1) and return state-str
-        status = self.pin_obj.read()
-        # TODO fix this
+    @property
+    def state(self):
+        self._controller.check_connection()
+        status = self._pin_obj.read()
         return self.states_lookup[status]
 
-    def high(self):
-        self.set_state(default_high_str)
-
-    def low(self):
-        self.set_state(default_low_str)
+    @state.setter
+    def state(self, target_state):
+        self._controller.check_connection()
+        if target_state not in self.__class__.states:
+            raise ValueError('Invalid state setting for Load!')
+        self._pin_obj.write(self.__class__.states[target_state])
 
 
 class RelayBoard(Load):
     # define states_lookup after states to block inheritance and key collision
-    states = RELAY_BOARD_STATES.copy()
+    states = {
+        'DISABLE': LOW,
+        'ENABLE': HIGH
+    }
     states_lookup = {v: k for k, v in states.items()}
     states.update(Load.states)
-
-    def enable(self):
-        self.set_state(relay_enable_str)
-
-    def disable(self):
-        self.set_state(relay_disable_str)
 
 
 class Relay(Load):
     # define states_lookup after states to block inheritance and key collision
-    states = RELAY_STATES.copy()
+    states = {
+        'ON': RELAY_CLOSED,
+        'OFF': RELAY_OPEN
+    }
     states_lookup = {v: k for k, v in states.items()}
     states.update(Load.states)
 
-    def on(self):
-        self.set_state(relay_on_str)
 
-    def off(self):
-        self.set_state(relay_off_str)
+class DigitalSensor(Element):
+    """Read only Digital Sensor Element."""
 
+    def prepare(self):
+        """Modify pin object to be a digital input"""
+        Element.prepare(self)
+        # call to parent prepare() takes care of connection checks
+        self._pin_obj.mode = INPUT
 
-class Valve(Relay):
-    # define states_lookup after states to block inheritance and key collision
-    states = VALVE_STATES.copy()
-    states_lookup = {v: k for k, v in states.items()}
-    states.update(Relay.states)
-
-    def set_state(self, target_state):
-        # if valve already in this state, do nothing
-        if target_state == self.get_state():
-            return
+    @property
+    def reading(self):
+        self._controller.check_connection()
+        status = self._pin_obj.read()
+        if status is True:
+            return 'HIGH'
         else:
-            Load.set_state(self, target_state)
-            # only pause if valve state is called
-            if target_state in VALVE_STATES:
-                self.controller.board.pass_time(VALVE_PAUSE)
-
-    def open(self):
-        self.set_state(valve_open_str)
-
-    def close(self):
-        self.set_state(valve_close_str)
+            return 'LOW'
 
 
-class Light:
+class AnalogSensor(Element):
+    """Read only Analog Sensor Element."""
+    # TODO check if this class works
+    def prepare(self):
+        """Modify pin object to be a digital input"""
+        Element.prepare(self)
+        # call to parent prepare() takes care of connection checks
+        self._pin_obj.mode = ANALOG
 
-    states = LIGHT_STATES.copy()
-
-    def __init__(self, controller, pin_a, pin_b, name):
-
-        if pin_a == pin_b:
-            raise RuntimeError('The same pin was listed twice for this Light.')
-
-        controller.component_name_check(name)
-
-        self.controller = controller
-        self.name = name
-        self.sublight_a = Relay(controller, pin_a, name + ':A')
-        self.sublight_b = Relay(controller, pin_b, name + ':B')
-        # dummy variably used for switching a and b -- used in low()
-        self.sublight_switch = None
-
-        # TODO assess whether Light object should be included in components list
-        # self.controller.components.append(self)
-
-    def set_state(self, target_state):
-
-        self.controller.check_connection()
-        if target_state not in Light.states:
-            raise ValueError('Invalid state setting for Light!')
-
-        if target_state == light_off_str:
-
-            self.sublight_a.off()
-            self.sublight_b.off()
-
-        elif target_state == light_low_str:
-
-            # switch objects between a and b, turn on a, turn off b ALWAYS
-            self.sublight_switch = self.sublight_a
-            self.sublight_a = self.sublight_b
-            self.sublight_b = self.sublight_switch
-            self.sublight_switch = None
-
-            self.sublight_a.on()
-            self.sublight_b.off()
-
-        elif target_state == light_high_str:
-
-            self.sublight_a.on()
-            self.sublight_b.on()
-
-        else:
-            raise RuntimeError('Unexpected state error for Light!')
-
-        return None
-
-    def get_state(self):
-
-        state_a = self.sublight_a.get_state()
-        state_b = self.sublight_b.get_state()
-        combo = (state_a, state_b)
-
-        if relay_off_str in combo:
-            # if at least one low...
-
-            if relay_on_str not in combo:
-                # neither one is high -> OFF
-                return light_off_str
-            else:
-                # at least one is high -> LOW
-                return light_low_str
-
-        else:
-            # neither one is low -> HIGH
-            return light_high_str
-
-    def high(self):
-        self.set_state(light_high_str)
-
-    def low(self):
-        self.set_state(light_low_str)
-
-    def off(self):
-        self.set_state(light_off_str)
-
-
-class Zone:
-
-    def __init__(self, name, control_valve, inlet_valve, outlet_valve, pump):
-        self.name = name
-        self.control_valve = control_valve
-        self.outlet_valve = outlet_valve
-        self.inlet_valve = inlet_valve
-        self.pump = pump
-
-    def fill(self):
-        self.outlet_valve.close()
-        self.control_valve.open()
-        self.inlet_valve.open()
-        self.pump.on()
-
-    def maintain(self):
-
-        self.pump.off()
-        self.inlet_valve.close()
-        self.outlet_valve.close()
-        self.control_valve.close()
-
-    def drain(self):
-        self.pump.off()
-        self.inlet_valve.close()
-        self.control_valve.open()
-        self.outlet_valve.open()
-
-    def flood(self, dur_in_minutes):
-        self.fill()
-        # time.sleep(fill_time)
-        self.maintain()
-        # time.sleep(dur_in_minutes - (fill_time + drain_time))
-        self.drain()
-        # time.sleep(drain_time)
-        self.maintain()
-
+    @property
+    def reading(self):
+        self._controller.check_connection()
+        status = self._pin_obj.read()
+        return status
 
 if __name__ == '__main__':
     pass
-
