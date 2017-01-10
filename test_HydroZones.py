@@ -2,9 +2,9 @@
 # imports
 import unittest
 import time
-import HydroLoads
+import Elements
 
-from LoadList import zones, controllers, light1
+from ElementList import zones, controllers, light1
 
 
 # @unittest.skip("Skipping TestPump Class...")

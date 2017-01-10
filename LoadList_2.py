@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # imports
-from HydroLoads import Controller, RelayBoard, Relay
+from Elements import Controller, RelayBoard, Relay
 
 # general definitions
 FLOOD_TIME = 0

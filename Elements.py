@@ -140,44 +140,44 @@ class Element:
 class Load(Element):
     """Digital output pin.  On or Off."""
     # define states_lookup after states to block inheritance and key collision
-    states = {
+    _states = {
         'LOW': LOW,
         'HIGH': HIGH
     }
-    states_lookup = {v: k for k, v in states.items()}
+    _states_lookup = {v: k for k, v in _states.items()}
 
     @property
     def state(self):
         self._controller.check_connection()
         status = self._pin_obj.read()
-        return self.states_lookup[status]
+        return self._states_lookup[status]
 
     @state.setter
     def state(self, target_state):
         self._controller.check_connection()
-        if target_state not in self.__class__.states:
+        if target_state not in self.__class__._states:
             raise ValueError('Invalid state setting for Load!')
-        self._pin_obj.write(self.__class__.states[target_state])
+        self._pin_obj.write(self.__class__._states[target_state])
 
 
 class RelayBoard(Load):
     # define states_lookup after states to block inheritance and key collision
-    states = {
+    _states = {
         'DISABLE': LOW,
         'ENABLE': HIGH
     }
-    states_lookup = {v: k for k, v in states.items()}
-    states.update(Load.states)
+    _states_lookup = {v: k for k, v in _states.items()}
+    _states.update(Load._states)
 
 
 class Relay(Load):
     # define states_lookup after states to block inheritance and key collision
-    states = {
+    _states = {
         'ON': RELAY_CLOSED,
         'OFF': RELAY_OPEN
     }
-    states_lookup = {v: k for k, v in states.items()}
-    states.update(Load.states)
+    _states_lookup = {v: k for k, v in _states.items()}
+    _states.update(Load._states)
 
 
 class DigitalSensor(Element):
@@ -190,7 +190,7 @@ class DigitalSensor(Element):
         self._pin_obj.mode = INPUT
 
     @property
-    def reading(self):
+    def state(self):
         self._controller.check_connection()
         status = self._pin_obj.read()
         if status is True:
@@ -209,7 +209,7 @@ class AnalogSensor(Element):
         self._pin_obj.mode = ANALOG
 
     @property
-    def reading(self):
+    def state(self):
         self._controller.check_connection()
         status = self._pin_obj.read()
         return status

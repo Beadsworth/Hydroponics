@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # imports
-from HydroLoads import Load, Controller, DigitalSensor
+from Elements import Load, Controller, DigitalSensor, Relay
 
 # controller info
 addr = '/dev/ttyACM0'
@@ -20,8 +20,8 @@ LED_WHITE2 = 9
 red = Load(ard, LED_RED, 'red')
 orange = Load(ard, LED_ORANGE, 'orange')
 yellow = Load(ard, LED_YELLOW, 'yellow')
-green = Load(ard, LED_GREEN, 'green')
-blue = Load(ard, LED_BLUE, 'blue')
+green = Relay(ard, LED_GREEN, 'green')
+blue = Relay(ard, LED_BLUE, 'blue')
 purple = Load(ard, LED_PURPLE, 'purple')
 white1 = Load(ard, LED_WHITE1, 'white1')
 white2 = Load(ard, LED_WHITE2, 'white2')
