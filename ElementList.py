@@ -17,14 +17,14 @@ LED_WHITE1 = 8
 LED_WHITE2 = 9
 
 # leds
-red = Load(ard, LED_RED, 'red')
-orange = Load(ard, LED_ORANGE, 'orange')
-yellow = Load(ard, LED_YELLOW, 'yellow')
+red = Relay(ard, LED_RED, 'red')
+orange = Relay(ard, LED_ORANGE, 'orange')
+yellow = Relay(ard, LED_YELLOW, 'yellow')
 green = Relay(ard, LED_GREEN, 'green')
 blue = Relay(ard, LED_BLUE, 'blue')
-purple = Load(ard, LED_PURPLE, 'purple')
-white1 = Load(ard, LED_WHITE1, 'white1')
-white2 = Load(ard, LED_WHITE2, 'white2')
+purple = Relay(ard, LED_PURPLE, 'purple')
+white1 = Relay(ard, LED_WHITE1, 'white1')
+white2 = Relay(ard, LED_WHITE2, 'white2')
 
 level = DigitalSensor(ard, 12, 'level_sensor')
 

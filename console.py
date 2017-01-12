@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-from ComponentList import *
+from ComponentList import ard
+from GroupList import zone1, zone2, zone3, light1
 
 
 def quit():

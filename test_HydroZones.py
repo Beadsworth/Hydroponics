@@ -44,7 +44,7 @@ class TestZones(unittest.TestCase):
             time.sleep(2)
 
             print('Maintaining ' + zone.name)
-            zone.maintain()
+            zone.idle()
             time.sleep(2)
 
             print('Draining ' + zone.name)
@@ -52,7 +52,7 @@ class TestZones(unittest.TestCase):
             time.sleep(2)
 
             print('Maintaining ' + zone.name)
-            zone.maintain()
+            zone.idle()
             time.sleep(2)
 
             light1.low()
