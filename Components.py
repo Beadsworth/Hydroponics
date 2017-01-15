@@ -1,131 +1,72 @@
-from Elements import Load, Relay, DigitalSensor, AnalogSensor
-
-import time
 import warnings
 
 
 class Component:
     """Component base class -- read state only.  Extend this class for new components"""
 
-    _component_class = None
+    _element_class = None
+    _states = None
 
     def __init__(self, element, name):
 
-        if self.__class__._component_class is None:
+        if self.__class__._element_class is None:
             pass
-        elif isinstance(element, self.__class__._component_class) is False:
+        elif isinstance(element, self.__class__._element_class) is False:
             raise RuntimeError('The element is incompatible with this Component subclass')
-        self._element = element
         self._name = name
-
-    @property
-    def element(self):
-        return self._element
+        self._element = element
 
     @property
     def name(self):
         return self._name
 
+    @property
+    def element(self):
+        return self._element
+
     # must extend this function for custom services
     @property
     def state(self):
+        # return element state
         return self.element.state
 
     # must extend this function for custom services
-    # does nothing
+    # checks if state is valid.
     @state.setter
     def state(self, target_state):
-        warnings.warn("Component class does not have its own state-setting method!  It must be defined in child class!")
 
-    # if exception is thrown, element is disconnected
-    @property
-    def active(self):
-        temp = None
-        try:
-            temp = self.element
-            print(str(self.element.name) + 'has responded... probably connected')
-            return True
-        except Exception:
-            print('Exception thrown... ' + str(self.element.name) + ' probably not connected!')
-            return False
-        finally:
-            del temp
+        if self.__class__._states is None:
+            warnings.warn(
+                "Component class does not have its own state-setting method!  It must be defined in child class!")
+
+        elif target_state not in self.__class__._states:
+            raise RuntimeError("Invalid state for " + str(self.__class__))
 
 
-class Pump(Component):
+class Example(Component):
+    """Example class, use as template for other Group child classes."""
+    # replace _states with possible set-states
+    _states = None
 
-    _component_class = Relay
-    _states = {
-        'ON': 'ON',
-        'OFF': 'OFF'
-    }
-    _states_lookup = {v: k for k, v in _states.items()}
+    def __init__(self, name):
+        # replace "pass" with inherited function
+        pass
+        # leave super() alone at end of __init__()
+        super().__init__([], name)
 
     @property
     def state(self):
-        status = super().state
-        return self._states_lookup[status]
+        # replace None with property
+        return None
 
     @state.setter
     def state(self, target_state):
-        self.element.state = self.__class__._states[target_state]
+
+        # leave fset() along at beginning of @state.setter
+        Component.state.fset(self, target_state)
+        # replace "pass" with inherited function
+        pass
 
 
-class Light(Component):
-
-    _component_class = Relay
-    _states = {
-        'ON': 'ON',
-        'OFF': 'OFF'
-    }
-    _states_lookup = {v: k for k, v in _states.items()}
-
-    @property
-    def state(self):
-        status = super().state
-        return self._states_lookup[status]
-
-    @state.setter
-    def state(self, target_state):
-        self.element.state = self.__class__._states[target_state]
-
-
-class Valve(Component):
-
-    _component_class = Relay
-    _states = {
-        'OPEN': 'ON',
-        'CLOSED': 'OFF'
-    }
-    _states_lookup = {v: k for k, v in _states.items()}
-
-    _VALVE_PAUSE = 5
-
-    @property
-    def state(self):
-        status = super().state
-        return self._states_lookup[status]
-
-    @state.setter
-    def state(self, target_state):
-        # if already in that state, do not pause.  state.setter is always called.
-        if target_state == self.state:
-            self.element.state = self.__class__._states[target_state]
-        else:
-            self.element.state = self.__class__._states[target_state]
-            time.sleep(Valve._VALVE_PAUSE)
-
-
-class WaterLevelSensor(Component):
-
-    _component_class = DigitalSensor
-    _states = {
-        'FULL': 'HIGH',
-        'EMPTY': 'LOW'
-    }
-    _states_lookup = {v: k for k, v in _states.items()}
-
-    @property
-    def state(self):
-        status = super().state
-        return self._states_lookup[status]
+if __name__ == '__main__':
+    pass

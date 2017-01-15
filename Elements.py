@@ -1,4 +1,4 @@
-from pyfirmata import ArduinoMega, util, PWM, Arduino, INPUT, ANALOG
+from pyfirmata import ArduinoMega, util, Arduino, INPUT, ANALOG
 import time
 
 LOW = 0

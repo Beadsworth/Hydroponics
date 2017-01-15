@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
-from ComponentList import ard
-from GroupList import zone1, zone2, zone3, light1
+from HydroElementList import *
+from HydroComponentList import *
+from HydroGroupList import *
 
 
 def quit():
