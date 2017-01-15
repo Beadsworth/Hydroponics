@@ -1,5 +1,5 @@
 from Components import Component
-from Elements import Relay, DigitalSensor
+from ArduinoElements import Relay, DigitalSensor
 
 import time
 

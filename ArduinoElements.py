@@ -40,7 +40,7 @@ class Controller:
         self._it.start()
         self._active = True
 
-        for element in [elem for elem in self._elements if isinstance(elem, Element)]:
+        for element in [elem for elem in self._elements if isinstance(elem, ArduinoElement)]:
             # prepare all pin_objs after board connects
             element.prepare()
             # all loads set to 'OFF' before relay board enabled
@@ -103,7 +103,7 @@ class Controller:
                 element.state = 'DISABLE'
 
 
-class Element:
+class ArduinoElement:
     """Superclass, mostly to prevent adding/removing elements while Controller is active."""
     def __init__(self, controller, pin, name):
 
@@ -137,7 +137,7 @@ class Element:
         self._pin_obj.write(LOW)
 
 
-class Load(Element):
+class Load(ArduinoElement):
     """Digital output pin.  On or Off."""
     # define states_lookup after states to block inheritance and key collision
     _states = {
@@ -180,12 +180,12 @@ class Relay(Load):
     _states.update(Load._states)
 
 
-class DigitalSensor(Element):
-    """Read only Digital Sensor Element."""
+class DigitalSensor(ArduinoElement):
+    """Read only Digital Sensor ArduinoElement."""
 
     def prepare(self):
         """Modify pin object to be a digital input"""
-        Element.prepare(self)
+        ArduinoElement.prepare(self)
         # call to parent prepare() takes care of connection checks
         self._pin_obj.mode = INPUT
 
@@ -199,12 +199,12 @@ class DigitalSensor(Element):
             return 'LOW'
 
 
-class AnalogSensor(Element):
-    """Read only Analog Sensor Element."""
+class AnalogSensor(ArduinoElement):
+    """Read only Analog Sensor ArduinoElement."""
     # TODO check if this class works
     def prepare(self):
         """Modify pin object to be a digital input"""
-        Element.prepare(self)
+        ArduinoElement.prepare(self)
         # call to parent prepare() takes care of connection checks
         self._pin_obj.mode = ANALOG
 

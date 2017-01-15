@@ -57,11 +57,11 @@ class Example(Group):
     # replace _states with possible set-states
     _states = None
 
-    def __init__(self, name):
+    def __init__(self, component_list, name):
         # replace "pass" with inherited function
         pass
         # leave super() alone at end of __init__()
-        super().__init__([], name)
+        super().__init__(component_list, name)
 
     @property
     def state(self):

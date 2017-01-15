@@ -4,8 +4,8 @@ import unittest
 import time
 
 from pyfirmata import PinAlreadyTakenError
-from Elements import light_high_str, light_low_str, light_off_str, relay_on_str, relay_off_str
-import Elements
+from ArduinoElements import light_high_str, light_low_str, light_off_str, relay_on_str, relay_off_str
+import ArduinoElements
 import console
 
 mega = console.get_arduino()
@@ -43,19 +43,19 @@ class TestController(unittest.TestCase):
     def test_adding_when_connected(self):
 
         with self.assertRaises(RuntimeError):
-            temp = Elements.Element(mega, 13, 'test1')
+            temp = ArduinoElements.ArduinoElement(mega, 13, 'test1')
 
         with self.assertRaises(RuntimeError):
-            temp = Elements.Valve(mega, 13, 'test3')
+            temp = ArduinoElements.Valve(mega, 13, 'test3')
 
         with self.assertRaises(RuntimeError):
-            temp = Elements.Relay(mega, 13, 'test4')
+            temp = ArduinoElements.Relay(mega, 13, 'test4')
 
         with self.assertRaises(RuntimeError):
-            temp = Elements.RelayBoard(mega, 13, 'test5')
+            temp = ArduinoElements.RelayBoard(mega, 13, 'test5')
 
         with self.assertRaises(RuntimeError):
-            temp = Elements.Light(mega, 12, 13, 'test5')
+            temp = ArduinoElements.Light(mega, 12, 13, 'test5')
 
 
 # @unittest.skip("Skipping TestLight Class...")
@@ -80,8 +80,8 @@ class TestLoad(unittest.TestCase):
         mega.disconnect()
 
         with self.assertRaises(PinAlreadyTakenError):
-            temp1 = Elements.Element(mega, 30, 'hi')
-            temp2 = Elements.Element(mega, 30, 'bye')
+            temp1 = ArduinoElements.ArduinoElement(mega, 30, 'hi')
+            temp2 = ArduinoElements.ArduinoElement(mega, 30, 'bye')
             mega.connect()
 
         mega.components.remove(temp1)

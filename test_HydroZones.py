@@ -2,7 +2,7 @@
 # imports
 import unittest
 import time
-import Elements
+import ArduinoElements
 
 from HydroElementList import zones, controllers, light1
 

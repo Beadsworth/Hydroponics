@@ -1,9 +1,9 @@
-import Elements
+import ArduinoElements
 
 
 # controller info
 addr = '/dev/ttyACM0'
-ard = Elements.Controller(addr)
+ARD1 = ArduinoElements.Controller(addr)
 
 # define pin locations
 LED_RED = 2
@@ -16,16 +16,16 @@ LED_WHITE1 = 8
 LED_WHITE2 = 9
 
 # LEDs
-red = Elements.Relay(ard, LED_RED, 'red')
-orange = Elements.Relay(ard, LED_ORANGE, 'orange')
-yellow = Elements.Relay(ard, LED_YELLOW, 'yellow')
-green = Elements.Relay(ard, LED_GREEN, 'green')
-blue = Elements.Relay(ard, LED_BLUE, 'blue')
-purple = Elements.Relay(ard, LED_PURPLE, 'purple')
-white1 = Elements.Relay(ard, LED_WHITE1, 'white1')
-white2 = Elements.Relay(ard, LED_WHITE2, 'white2')
+red = ArduinoElements.Relay(ARD1, LED_RED, 'red')
+orange = ArduinoElements.Relay(ARD1, LED_ORANGE, 'orange')
+yellow = ArduinoElements.Relay(ARD1, LED_YELLOW, 'yellow')
+green = ArduinoElements.Relay(ARD1, LED_GREEN, 'green')
+blue = ArduinoElements.Relay(ARD1, LED_BLUE, 'blue')
+purple = ArduinoElements.Relay(ARD1, LED_PURPLE, 'purple')
+white1 = ArduinoElements.Relay(ARD1, LED_WHITE1, 'white1')
+white2 = ArduinoElements.Relay(ARD1, LED_WHITE2, 'white2')
 
-level = Elements.DigitalSensor(ard, 12, 'level_sensor')
+level = ArduinoElements.DigitalSensor(ARD1, 12, 'level_sensor')
 
 
 if __name__ == '__main__':

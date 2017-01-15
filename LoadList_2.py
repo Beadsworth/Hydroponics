@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # imports
-from Elements import Controller, RelayBoard, Relay
+from ArduinoElements import Controller, RelayBoard, Relay
 
 # general definitions
 FLOOD_TIME = 0
