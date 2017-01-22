@@ -3,7 +3,6 @@ class Component:
 
     _valid_states = None
 
-    # TODO consider removing element from base class
     def __init__(self, name):
         self._name = name
 
@@ -31,7 +30,6 @@ class ArduinoComponent(Component):
     _element_class = None
     _valid_states = None
 
-    # TODO consider removing element from base class
     def __init__(self, element, name):
 
         super().__init__(name)

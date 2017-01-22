@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 
-from HydroElementList import *
-from HydroComponentList import *
-from HydroGroupList import *
+from config.HydroGroupList import *
 
 
 def quit():

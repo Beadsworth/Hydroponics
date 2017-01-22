@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 # imports
-import unittest
 import time
-import ArduinoElements
+import unittest
 
-from HydroElementList import zones, controllers, light1
+from config.HydroElementList import zones, controllers, light1
 
 
 # @unittest.skip("Skipping TestPump Class...")

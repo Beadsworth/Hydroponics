@@ -1,4 +1,4 @@
-from Components import Component
+from Components.Component import Component
 
 
 class Group:
@@ -41,7 +41,3 @@ class Group:
             return function(inst, target_state)
 
         return wrapper
-
-
-if __name__ == '__main__':
-    pass

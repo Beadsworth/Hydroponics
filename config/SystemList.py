@@ -1,5 +1,5 @@
-from Groups import Group as System
-from HydroGroupList import *
+from Groups.Group import Group as System
+from config.HydroGroupList import *
 
 hydro = System(ard1, 'Hydroponics System')
 
