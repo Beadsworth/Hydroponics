@@ -1,4 +1,4 @@
-from Components import Component
+from Components import Component, ArduinoComponent
 from Groups import Group
 from HydroComponents import Light, Valve, Pump, WaterLevelSensor
 
@@ -9,7 +9,7 @@ import warnings
 class Arduino(Group):
     """Arduino class, use for Arduino startup and higher functions."""
     # replace _states with possible set-states
-    _states = "CONNECTED", "DISCONNECTED", "RECONNECTED"
+    _valid_states = "CONNECTED", "DISCONNECTED", "RECONNECTED"
 
     # item_list can contain groups or components
     def __init__(self, item_list, name):
@@ -21,7 +21,7 @@ class Arduino(Group):
 
         def controller_search(check):
             # if component, return element.controller
-            if isinstance(check, Component):
+            if isinstance(check, ArduinoComponent):
                 self._item_list.append(check.element.controller)
             # if group, call controller search on every item in group
             elif isinstance(check, Group):
@@ -49,19 +49,14 @@ class Arduino(Group):
     @property
     def state(self):
 
-        status = self._controller.active
-
-        if status is True:
+        if self._controller.active is True:
             return "CONNECTED"
-        elif status is False:
+        elif self._controller.active is False:
             return "DISCONNECTED"
-        else:
-            return "ERROR"
 
     @state.setter
+    @Group.check_state
     def state(self, target_state):
-        # leave fset() along at beginning of @state.setter
-        Group.state.fset(self, target_state)
 
         if target_state == "CONNECTED":
             self._controller.connect()
@@ -69,13 +64,11 @@ class Arduino(Group):
             self._controller.disconnect()
         elif target_state == "RECONNECTED":
             self._controller.reconnect()
-        else:
-            pass
 
 
 class SuperLight(Group):
 
-    _states = 'OFF', 'LOW', 'HIGH'
+    _valid_states = 'OFF', 'LOW', 'HIGH'
 
     def __init__(self, light_a, light_b, name):
 
@@ -100,13 +93,10 @@ class SuperLight(Group):
             return 'LOW'
         elif count == 0:
             return 'OFF'
-        else:
-            return 'ERROR'
 
     @state.setter
+    @Group.check_state
     def state(self, target_state):
-
-        Group.state.fset(self, target_state)
 
         if target_state == 'HIGH':
             self._light_a.state = 'ON'
@@ -120,14 +110,14 @@ class SuperLight(Group):
                 self._light_b.state = 'ON'
 
             self._switch = int((self._switch + 1) % 2)
-        else:  # 'OFF'
+        elif target_state == 'OFF':
             self._light_a.state = 'OFF'
             self._light_b.state = 'OFF'
 
 
 class FloodZone(Group):
 
-    _states = 'FILL', 'DRAIN', 'IDLE'
+    _valid_states = 'FILL', 'DRAIN', 'IDLE'
 
     def __init__(self, control_valve, inlet_valve, outlet_valve, pump, level_sensor, name):
 
@@ -149,33 +139,36 @@ class FloodZone(Group):
     @property
     def state(self):
 
-        status = super().state
-
-        if status[self._level_sensor.name] == 'FULL':
+        if self._level_sensor.state == 'FULL':
             return 'FULL'
 
-        elif (status[self._level_sensor.name] == 'EMPTY') and \
-                (status[self._control_valve.name] == 'CLOSED'):  # zone empty, control valve closed
-            return 'EMPTY'
+        # level sensor not full -- must be filling or draining or just empty
+        else:
+            # zone empty, control valve closed
+            if self._control_valve.state == 'CLOSED':
+                return 'EMPTY'
 
-        else:  # control valve open, actively filling or draining
-            # if drain open and pump off
-            if (status[self._outlet_valve.name] == 'OPEN') and (status[self._pump.name] == 'OFF'):
-                return 'DRAINING'
-            elif (status[self._outlet_valve.name] == 'CLOSED') and (status[self._pump.name] == 'ON') \
-                    and (status[self._inlet_valve.name] == 'OPEN'):  # outlet closed, inlet open, pump on
-                return 'FILLING'
+            # control valve open, either draining or filling
+            else:
+                # if drain open, pump off, and control valve open
+                if (self._outlet_valve.state == 'OPEN') and (self._pump.state == 'OFF'):
+                    return 'DRAINING'
+                # outlet closed, inlet open, pump on
+                elif (self._outlet_valve.state == 'CLOSED') and (self._inlet_valve.state == 'OPEN') \
+                        and (self._pump.state == 'ON'):
+                    return 'FILLING'
+                else:
+                    return 'UNEXPECTED_BEHAVIOR'
 
     @state.setter
+    @Group.check_state
     def state(self, target_state):
-
-        Group.state.fset(self, target_state)
 
         if target_state == 'FILL':
             self.fill()
         elif target_state == 'DRAIN':
             self.drain()
-        else:  # 'IDLE'
+        elif target_state == 'IDLE':
             self.idle()
 
     def fill(self):

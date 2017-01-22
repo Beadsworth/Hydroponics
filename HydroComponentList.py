@@ -12,6 +12,8 @@ white1 = HydroComponents.Light(white1, 'white1')
 white2 = HydroComponents.Light(white2, 'white2')
 level1 = HydroComponents.WaterLevelSensor(level, 'level1')
 
+clock1 = HydroComponents.Clock("clock1")
+
 
 if __name__ == '__main__':
     pass

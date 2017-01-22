@@ -6,12 +6,11 @@ from HydroGroupList import *
 
 
 def quit():
-    ard_test.state = "DISCONNECTED"
+    ard1.state = "DISCONNECTED"
     print("Done!")
     exit()
 
 if __name__ == '__main__':
 
-    ard_test.state = "CONNECTED"
-
+    ard1.state = "CONNECTED"
     print("awaiting input...")

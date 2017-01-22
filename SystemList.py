@@ -1,7 +1,7 @@
-import HydroGroups as HydroSystems
+from Groups import Group as System
 from HydroGroupList import *
 
-hydro = HydroSystems.FloodZone(control1, inlet1, outlet1, pump1, level1, 'zone1')
+hydro = System(ard1, 'Hydroponics System')
 
 
 if __name__ == '__main__':
