@@ -1,11 +1,13 @@
 from config.HydroGroupList import *
 import test_triggers
 
-import time, queue, Trigger
+import time
+import queue
+import Trigger
 
 exec_queue = queue.Queue()
 exec_loop = Trigger.ExeQueue(exec_queue)
-poll_loop = Trigger.TriggerList(exec_queue)
+poll_loop = Trigger.TriggerList(exec_queue, poll_time=1)
 
 for trigger in test_triggers.triggers:
     poll_loop.add_trigger(trigger)

@@ -4,93 +4,6 @@ from config.HydroComponentList import *
 
 import datetime
 import time
-import threading
-
-import queue
-
-
-class ExeQueue(threading.Thread):
-    def __init__(self, exec_queue):
-        threading.Thread.__init__(self)
-        self._exec_queue = exec_queue
-
-    def run(self):
-        print("exec loop running...")
-        while True:
-            # get action when it becomes available
-            action = self._exec_queue.get(block=True)
-            print('Executing action...')
-            action()
-            self._exec_queue.task_done()
-
-
-class TriggerList(threading.Thread):
-
-    def __init__(self, exec_queue, poll_time=1):
-        threading.Thread.__init__(self)
-        self._exec_queue = exec_queue
-        self._poll_time = poll_time
-        self._trigger_list = []
-        self._add_cache = []
-        self._remove_cache = []
-
-    def run(self):
-        print("Poll loop running...")
-        while True:
-            # queue put method inside _handle_triggers
-            self._handle_triggers()
-            print("logging...")
-            self._clean_trigger_list()
-            self._use_caches()
-            time.sleep(self._poll_time)
-
-    def add_trigger(self, trigger):
-        self._add_cache.append(trigger)
-
-    def remove_trigger(self, trigger):
-        self._remove_cache.append(trigger)
-
-    def _clean_trigger_list(self):
-        """prune away used, non-persistent triggers"""
-        for trigger in self._trigger_list:
-            if trigger.should_not_remain:
-                self.remove_trigger(trigger)
-
-    def _use_caches(self):
-        """Looks at caches and adds/removes triggers at a convenient time.  Place near end of loop"""
-        # remove triggers
-        for trigger in self._remove_cache:
-            # if trigger exists
-            if trigger in self._trigger_list:
-                self._trigger_list.remove(trigger)
-            else:
-                # no such trigger found
-                raise RuntimeError("Tried to remove a trigger that did not exist!")
-        self._remove_cache = []
-        # add triggers
-        for trigger in self._add_cache:
-            # if trigger already in list
-            if trigger in self._trigger_list:
-                raise RuntimeError("Trigger added to list more than once!")
-            else:
-                self._trigger_list.append(trigger)
-        self._add_cache = []
-
-    def _handle_triggers(self):
-        """Determines if a trigger has occurred, and sends actions to ExeQueue"""
-        for trigger in self._trigger_list:
-            if trigger.conditions_met:
-                if not trigger.latched:
-                    # TODO try execute, handle exceptions
-                    print(trigger, "was added to the queue!")
-                    # add execute method to execution queue
-                    self._exec_queue.put(trigger.execute)
-
-                # latch to prevent multiple executions
-                trigger.latched = True
-            else:
-                # unlatch after trigger is over
-                trigger.latched = False
 
 
 class Trigger:
@@ -123,15 +36,6 @@ class Trigger:
 
 
 
-
-
-
-
-
-
-
-
-
 class InstantTrigger(Trigger):
 
     def __init__(self, item, target_state):
@@ -150,8 +54,8 @@ class InstantTrigger(Trigger):
 
 class ClockTrigger(Trigger):
 
-    def __init__(self, item, target_state, clock, start_time, end_time, repeat_by='none'):
-
+    def __init__(self, item, target_state, clock, start_time, window, repeat_by='none'):
+        # window must be datetime.timedelta object
         super().__init__(persistent=True)
 
         if repeat_by not in ('none', 'day', 'hour', 'minute'):
@@ -164,7 +68,7 @@ class ClockTrigger(Trigger):
         self._target_state = target_state
         self._clock = clock
         self._start_time = start_time
-        self._end_time = end_time
+        self._end_time = start_time + window
         self._repeat_by = repeat_by
         # adjust times to standard values for repetition
         self.fix_times()
