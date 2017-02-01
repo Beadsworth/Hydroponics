@@ -51,7 +51,7 @@ class PollLoop(threading.Thread):
         while self._running:
             # queue put method inside _handle_triggers
             self._handle_triggers()
-            print("logging...")
+            # print("logging...")
             self._clean_trigger_list()
             self._use_caches()
             time.sleep(self._poll_time)

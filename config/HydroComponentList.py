@@ -1,4 +1,4 @@
-from Components import Pump, Valve, Light, WaterLevelSensor, Clock
+from Components import Pump, Valve, Light, WaterLevelSensor, Clock, TwitterAccount
 
 from config.HydroElementList import *
 
@@ -13,6 +13,7 @@ white2 = Light.Light(white2, 'white2')
 level1 = WaterLevelSensor.WaterLevelSensor(level, 'level1')
 
 clock1 = Clock.Clock("clock1")
+twitter_account = TwitterAccount.TwitterAccount("twitter")
 
 
 if __name__ == '__main__':

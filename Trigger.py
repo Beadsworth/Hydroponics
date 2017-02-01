@@ -165,29 +165,29 @@ class OverflowTrigger(Trigger):
         self._zone.state = "IDLE"
 
 
-class LightTrigger(Trigger):
+class Switch(Trigger):
 
-    _item_type = SuperLight.SuperLight
+    _item_type = None
 
-    def __init__(self, zone, light):
+    def __init__(self, switch, switch_state, item, item_state):
 
         super().__init__(persistent=True)
 
-        if isinstance(light, LightTrigger._item_type) is False:
-            raise RuntimeError("This is a trigger for zones only")
-        self._zone = zone
-        self._light = light
+        self._switch = switch
+        self._switch_state = switch_state
+        self._item = item
+        self._item_state = item_state
 
     @property
     def conditions_met(self):
         # return True if trigger should be executed
-        if self._zone.state == 'FULL':
+        if self._switch.state == self._switch_state:
             return True
         else:
             return False
 
     def execute(self):
-        self._light.state = "LOW"
+        self._item.state = self._item_state
 
 
 if __name__ == '__main__':
