@@ -10,12 +10,13 @@ RELAY_CLOSED = LOW
 class Controller:
     """Board that controls elements.  Each board needs its own session.  First initialize controller, then elements,
     then connect."""
-    def __init__(self, board_addr):
+    def __init__(self, board_addr, board_type='uno'):
         self._board_addr = board_addr
         self._board = None
         self._it = None
         self._elements = []
         self._active = False
+        self._board_type = board_type
 
     @property
     def board(self):
@@ -34,8 +35,12 @@ class Controller:
             print('Already connected!')
             return
         print('Connecting to controller board...')
-        # TODO change back to ArduinoMega
-        self._board = Arduino(self._board_addr)
+
+        if self._board_type == 'mega':
+            self._board = ArduinoMega(self._board_addr)
+        else:
+            self._board = Arduino(self._board_addr)
+
         self._it = util.Iterator(self._board)
         self._it.start()
         self._active = True

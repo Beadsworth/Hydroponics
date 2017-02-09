@@ -3,10 +3,6 @@ import queue
 import time
 import Trigger
 
-import test_triggers
-
-from config.HydroGroupList import *
-
 
 class System:
 

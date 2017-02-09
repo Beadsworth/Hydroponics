@@ -1,12 +1,10 @@
-from Groups import Arduino, FloodZone, SuperLight
-from config.HydroComponentList import *
+import Groups
+import config.HydroComponentList as HydroComponents
 
-zone1 = FloodZone.FloodZone(control1, inlet1, outlet1, pump1, level1, 'zone1')
-zone2 = FloodZone.FloodZone(control2, inlet1, outlet1, pump1, level1, 'zone2')
-zone3 = FloodZone.FloodZone(control3, inlet1, outlet1, pump1, level1, 'zone3')
-light1 = SuperLight.SuperLight(white1, white2, 'light1')
+zone1 = Groups.FloodZone.FloodZone(HydroComponents.control1, HydroComponents.inlet_valve, HydroComponents.outlet_valve,
+                                   HydroComponents.pump, HydroComponents.level1, 'zone1')
 
-ard1 = Arduino.Arduino([zone1, zone2, zone3, light1], 'ard1')
+mega_controller = Groups.Arduino.Arduino([zone1, ], 'arduino_mega_controller')
 
 if __name__ == '__main__':
     pass

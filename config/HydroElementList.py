@@ -3,29 +3,47 @@ import ArduinoElements
 
 # controller info
 addr = '/dev/ttyACM0'
-ARD1 = ArduinoElements.Controller(addr)
+hydro_mega = ArduinoElements.Controller(addr, board_type='mega')
 
 # define pin locations
-LED_RED = 2
-LED_ORANGE = 3
-LED_YELLOW = 4
-LED_GREEN = 5
-LED_BLUE = 6
-LED_PURPLE = 7
-LED_WHITE1 = 8
-LED_WHITE2 = 9
+BOX_BOARD_PIN = 36
+BOX1_PIN = 52
+BOX2_PIN = 50
+BOX3_PIN = 48
+BOX4_PIN = 46
+BOX5_PIN = 44
+BOX6_PIN = 42
+BOX7_PIN = 40
+BOX8_PIN = 38
 
-# LEDs
-red = ArduinoElements.Relay(ARD1, LED_RED, 'red')
-orange = ArduinoElements.Relay(ARD1, LED_ORANGE, 'orange')
-yellow = ArduinoElements.Relay(ARD1, LED_YELLOW, 'yellow')
-green = ArduinoElements.Relay(ARD1, LED_GREEN, 'green')
-blue = ArduinoElements.Relay(ARD1, LED_BLUE, 'blue')
-purple = ArduinoElements.Relay(ARD1, LED_PURPLE, 'purple')
-white1 = ArduinoElements.Relay(ARD1, LED_WHITE1, 'white1')
-white2 = ArduinoElements.Relay(ARD1, LED_WHITE2, 'white2')
+PLUG_BOARD_PIN = 45
+PLUG1_PIN = 47
+PLUG2_PIN = 49
+PLUG3_PIN = 53
+PLUG4_PIN = 51
 
-level = ArduinoElements.DigitalSensor(ARD1, 12, 'level_sensor')
+LEVEL1_PIN = 34
+
+# RelayBoards
+box_board = ArduinoElements.RelayBoard(hydro_mega, BOX_BOARD_PIN, 'box_board')
+plug_board = ArduinoElements.RelayBoard(hydro_mega, PLUG_BOARD_PIN, 'plug_board')
+
+#  Loads
+box1 = ArduinoElements.Relay(hydro_mega, BOX1_PIN, 'box1')
+box2 = ArduinoElements.Relay(hydro_mega, BOX2_PIN, 'box2')
+box3 = ArduinoElements.Relay(hydro_mega, BOX3_PIN, 'box3')
+box4 = ArduinoElements.Relay(hydro_mega, BOX4_PIN, 'box4')
+box5 = ArduinoElements.Relay(hydro_mega, BOX5_PIN, 'box5')
+box6 = ArduinoElements.Relay(hydro_mega, BOX6_PIN, 'box6')
+box7 = ArduinoElements.Relay(hydro_mega, BOX7_PIN, 'box7')
+box8 = ArduinoElements.Relay(hydro_mega, BOX8_PIN, 'box8')
+
+plug1 = ArduinoElements.Relay(hydro_mega, PLUG1_PIN, 'plug1')
+plug2 = ArduinoElements.Relay(hydro_mega, PLUG2_PIN, 'plug2')
+plug3 = ArduinoElements.Relay(hydro_mega, PLUG3_PIN, 'plug3')
+plug4 = ArduinoElements.Relay(hydro_mega, PLUG4_PIN, 'plug4')
+
+level = ArduinoElements.DigitalSensor(hydro_mega, LEVEL1_PIN, 'level_sensor')
 
 
 if __name__ == '__main__':

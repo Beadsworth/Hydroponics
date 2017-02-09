@@ -1,19 +1,20 @@
-from Components import Pump, Valve, Light, WaterLevelSensor, Clock, TwitterAccount
+import Components
+import config.HydroElementList as HydroElements
 
-from config.HydroElementList import *
+# pump and lights
+pump = Components.Pump.Pump(HydroElements.plug1, 'pump')
 
-outlet1 = Valve.Valve(red, 'red1')
-control3 = Valve.Valve(orange, 'orange1')
-control2 = Valve.Valve(yellow, 'yellow1')
-control1 = Valve.Valve(green, 'green1')
-inlet1 = Valve.Valve(blue, 'blue1')
-pump1 = Pump.Pump(purple, 'purple1')
-white1 = Light.Light(white1, 'white1')
-white2 = Light.Light(white2, 'white2')
-level1 = WaterLevelSensor.WaterLevelSensor(level, 'level1')
+# valves
+inlet_valve = Components.Valve.Valve(HydroElements.box1, 'inlet_valve')
+control1 = Components.Valve.Valve(HydroElements.box2, 'zone1_control_valve')
+outlet_valve = Components.Valve.Valve(HydroElements.box3, 'outlet_valve')
 
-clock1 = Clock.Clock("clock1")
-twitter_account = TwitterAccount.TwitterAccount("twitter")
+# sensors
+level1 = Components.WaterLevelSensor.WaterLevelSensor(HydroElements.level, 'level1')
+
+# misc
+hydro_clock = Components.Clock.Clock("clock")
+twitter_account = Components.TwitterAccount.TwitterAccount("twitter")
 
 
 if __name__ == '__main__':
