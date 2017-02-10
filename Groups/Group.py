@@ -10,6 +10,7 @@ class Group:
     def __init__(self, component_list, name):
 
         self._component_list = []
+        self._trigger_list = []
 
         for component in component_list:
             # if component is not Component class or another Group
@@ -31,6 +32,13 @@ class Group:
     @property
     def valid_states(self):
         return self._valid_states
+
+    @property
+    def trigger_list(self):
+        return self._trigger_list
+
+    def add_trigger(self, trigger):
+        self._trigger_list.append(trigger)
 
     # checks if state is valid.
     @staticmethod

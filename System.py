@@ -12,6 +12,8 @@ class System:
         self._exec_loop = ExeQueue(self._exec_queue, name=(self._name + ' exec loop'))
         self._poll_loop = PollLoop(self._exec_queue, name=(self._name + ' poll loop'), poll_time=poll_time)
 
+        self._groups = []
+
     def start(self):
         self._exec_loop.start()
         self._poll_loop.start()
@@ -25,7 +27,12 @@ class System:
     def add_trigger(self, trigger):
         self._poll_loop.add_trigger(trigger)
 
-    def do(self, item, state):
+    def add_group(self, group):
+        self._groups.append(group)
+        for trigger in group.trigger_list:
+            self.add_trigger(trigger)
+
+    def set(self, item, state):
         temp_trigger = Trigger.InstantTrigger(item, state)
         self.add_trigger(temp_trigger)
 
@@ -100,7 +107,7 @@ class PollLoop(threading.Thread):
         self._add_cache = []
 
     def stop(self):
-        # should do finish current cycle
+        # should set finish current cycle
         self._running = False
 
 

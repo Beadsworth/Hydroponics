@@ -3,6 +3,8 @@ from Components.Valve import Valve
 from Components.WaterLevelSensor import WaterLevelSensor
 from Groups.Group import Group
 
+from Trigger import OverflowTrigger
+
 import time
 import warnings
 
@@ -27,6 +29,7 @@ class FloodZone(Group):
         self._level_sensor = level_sensor
 
         super().__init__([control_valve, inlet_valve, outlet_valve, pump, level_sensor], name)
+        self.add_trigger(OverflowTrigger(self))
 
     @property
     def state(self):

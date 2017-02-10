@@ -1,9 +1,4 @@
-from Groups.FloodZone import FloodZone
-from config.HydroGroupList import *
-from config.HydroComponentList import *
-
 import datetime
-import time
 
 
 class Trigger:
@@ -143,14 +138,9 @@ class ClockTrigger(Trigger):
 
 class OverflowTrigger(Trigger):
 
-    _item_type = FloodZone.FloodZone
-
     def __init__(self, zone):
 
         super().__init__(persistent=True)
-
-        if isinstance(zone, OverflowTrigger._item_type) is False:
-            raise RuntimeError("This is a trigger for zones only")
         self._zone = zone
 
     @property
