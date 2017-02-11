@@ -47,9 +47,9 @@ class InstantTrigger(Trigger):
         self._item.state = self._target_state
 
 
-class ClockTrigger(Trigger):
-
-    def __init__(self, item, target_state, clock, start_time, window, repeat_by='none'):
+class Schedule(Trigger):
+    # TODO block triggers until start time, then repeat?
+    def __init__(self, item, target_state, clock, start_str, window_str='00:01:00', repeat_by='none'):
         # window must be datetime.timedelta object
         super().__init__(persistent=True)
 
@@ -58,6 +58,16 @@ class ClockTrigger(Trigger):
 
         if repeat_by == 'none':
             self._persistent = False
+
+        # create datetime object for start time
+        start_time = datetime.datetime.strptime(start_str, '%H:%M:%S')
+
+        # create timedelta object for window
+        t = datetime.datetime.strptime(window_str, '%H:%M:%S')
+        window = datetime.timedelta(hours=t.hour, minutes=t.minute, seconds=t.second)
+
+        if window > datetime.timedelta(hours=24):
+            raise RuntimeError("window must be less than 24 hours")
 
         self._item = item
         self._target_state = target_state
@@ -70,8 +80,8 @@ class ClockTrigger(Trigger):
 
     @property
     def _now(self):
-        now = datetime.datetime.now()
-        now = ClockTrigger.adj_time(now, self._repeat_by)
+        now = self._clock.state
+        now = Schedule.adj_time(now, self._repeat_by)
         # print("Current time:", now.time())
         return now
 
@@ -86,16 +96,14 @@ class ClockTrigger(Trigger):
         self._item.state = self._target_state
 
     def fix_times(self):
-        self._start_time = ClockTrigger.adj_time(self._start_time, self._repeat_by)
-        self._end_time = ClockTrigger.adj_time(self._end_time, self._repeat_by)
+        self._start_time = Schedule.adj_time(self._start_time, self._repeat_by)
+        self._end_time = Schedule.adj_time(self._end_time, self._repeat_by)
 
         # if start happens after end -- illogical
         if self._start_time > self._end_time:
 
-            # if one time event, but times out of order, raise exception
             if self._repeat_by == 'none':
-                raise RuntimeError("One time event: start time occurs after end time")
-
+                self._end_time += datetime.timedelta(days=1)
             elif self._repeat_by == 'day':
                 self._end_time += datetime.timedelta(days=1)
             elif self._repeat_by == 'hour':
@@ -109,31 +117,46 @@ class ClockTrigger(Trigger):
         # continue to alter time, return value to break out of alterations
         # default time is datetime.datetime.min()
 
-        new_time = datetime.datetime.min
-
-        new_time = new_time.replace(second=datetime_obj.second)
+        new_time = datetime.datetime.min.replace(second=datetime_obj.second)
 
         if period == 'minute':
             # repeat every minute
             return new_time
-        new_time = new_time.replace(minute=datetime_obj.minute)
 
+        new_time = new_time.replace(minute=datetime_obj.minute)
         if period == 'hour':
             # repeat hourly
             return new_time
-        new_time = new_time.replace(hour=datetime_obj.hour)
 
+        new_time = new_time.replace(hour=datetime_obj.hour)
         if period == 'day':
             # repeat daily
             return new_time
+
         new_time = new_time.replace(day=datetime_obj.day)
         new_time = new_time.replace(month=datetime_obj.month)
         new_time = new_time.replace(year=datetime_obj.year)
-
         if period == 'none':
             # execute once at specified time period
             # basically no alterations
             return new_time
+
+    # wrappers for convenience
+    @staticmethod
+    def once(item, target_state, clock, start_str, window_str='00:01:00'):
+        return Schedule(item, target_state, clock, start_str, window_str, repeat_by='none')
+
+    @staticmethod
+    def every_day(item, target_state, clock, start_str, window_str='00:01:00'):
+        return Schedule(item, target_state, clock, start_str, window_str, repeat_by='day')
+
+    @staticmethod
+    def every_hour(item, target_state, clock, start_str, window_str='00:01:00'):
+        return Schedule(item, target_state, clock, start_str, window_str, repeat_by='hour')
+
+    @staticmethod
+    def every_minute(item, target_state, clock, start_str, window_str='00:01:00'):
+        return Schedule(item, target_state, clock, start_str, window_str, repeat_by='minute')
 
 
 class OverflowTrigger(Trigger):
