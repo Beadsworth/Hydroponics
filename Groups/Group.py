@@ -40,6 +40,9 @@ class Group:
     def add_trigger(self, trigger):
         self._trigger_list.append(trigger)
 
+    def set_system(self, system):
+        self._system = system
+
     # checks if state is valid.
     @staticmethod
     def check_state(function):

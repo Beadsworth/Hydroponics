@@ -29,12 +29,29 @@ class System:
 
     def add_group(self, group):
         self._groups.append(group)
+        group.set_system(self)
         for trigger in group.trigger_list:
             self.add_trigger(trigger)
 
     def set(self, item, state):
         temp_trigger = Trigger.InstantTrigger(item, state)
         self.add_trigger(temp_trigger)
+
+    def schedule(self, item, target_state, clock, start_str, window_str='00:01:00', repeat_by='none'):
+        clock_trigger = Trigger.ClockTrigger(item, target_state, clock, start_str, window_str, repeat_by)
+        self.add_trigger(clock_trigger)
+
+    def schedule_once(self, item, target_state, clock, start_str, window_str='00:01:00'):
+        self.schedule(item, target_state, clock, start_str, window_str, repeat_by='once')
+
+    def schedule_every_day(self, item, target_state, clock, start_str, window_str='00:01:00'):
+        self.schedule(item, target_state, clock, start_str, window_str, repeat_by='day')
+
+    def schedule_every_hour(self, item, target_state, clock, start_str, window_str='00:01:00'):
+        self.schedule(item, target_state, clock, start_str, window_str, repeat_by='hour')
+
+    def schedule_every_minute(self, item, target_state, clock, start_str, window_str='00:01:00'):
+        self.schedule(item, target_state, clock, start_str, window_str, repeat_by='minute')
 
 
 class PollLoop(threading.Thread):
