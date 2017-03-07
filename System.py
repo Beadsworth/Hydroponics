@@ -2,6 +2,11 @@ import threading
 import queue
 import time
 import Trigger
+import logging
+
+from config.HydroComponentList import status_level1
+
+logging.basicConfig(filename='test.log', level=logging.DEBUG, format='%(asctime)s %(message)s')
 
 
 class System:
@@ -69,11 +74,17 @@ class PollLoop(threading.Thread):
         """Poll for triggers, send commands to exec_loop, clean trigger list.  If running is False, quit"""
         print("Poll loop running...")
         while self._running:
-            # queue put method inside _handle_triggers
+            # deal with triggers
             self._handle_triggers()
-            # print("logging...")
             self._clean_trigger_list()
             self._use_caches()
+
+            # log values
+            # TODO fix this
+            logging.info("status_level1.state is:" + str(status_level1.state))
+            print("level1.state:", status_level1.state)
+
+            # sleep
             time.sleep(self._poll_time)
 
     def add_trigger(self, trigger):
@@ -139,9 +150,13 @@ class ExeQueue(threading.Thread):
         while self._running:
             # get action when it becomes available
             action = self._exec_queue.get(block=True)
-            print('Executing action:', action)
-            action()
-            self._exec_queue.task_done()
+            print('attempting action:', action)
+            try:
+                action()
+            except RuntimeError:
+                print("Warning, there was an error at", time.time())
+            finally:
+                self._exec_queue.task_done()
 
     def stop(self):
         print("stopping...")

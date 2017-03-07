@@ -22,7 +22,8 @@ PLUG2_PIN = 49
 PLUG3_PIN = 53
 PLUG4_PIN = 51
 
-LEVEL1_PIN = 34
+OVERFLOW_LEVEL_PIN = 34
+STATUS_LEVEL_PIN = 32
 
 # RelayBoards
 box_board = ArduinoElements.RelayBoard(hydro_mega, BOX_BOARD_PIN, 'box_board')
@@ -43,7 +44,8 @@ plug2 = ArduinoElements.Relay(hydro_mega, PLUG2_PIN, 'plug2')
 plug3 = ArduinoElements.Relay(hydro_mega, PLUG3_PIN, 'plug3')
 plug4 = ArduinoElements.Relay(hydro_mega, PLUG4_PIN, 'plug4')
 
-level = ArduinoElements.DigitalSensor(hydro_mega, LEVEL1_PIN, 'level_sensor')
+overflow_level = ArduinoElements.DigitalSensor(hydro_mega, OVERFLOW_LEVEL_PIN, 'overflow_sensor')
+status_level = ArduinoElements.DigitalSensor(hydro_mega, STATUS_LEVEL_PIN, 'status_sensor')
 
 
 if __name__ == '__main__':

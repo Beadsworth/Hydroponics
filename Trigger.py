@@ -177,7 +177,6 @@ class OverflowTrigger(Trigger):
     def execute(self):
         # TODO stop blocking
         # sleep for 10 seconds to prevent float from falling
-        time.sleep(10)
         self._zone.state = "IDLE"
 
 

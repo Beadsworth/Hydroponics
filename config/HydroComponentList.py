@@ -11,7 +11,8 @@ control1 = Valve.Valve(HydroElements.box2, 'zone1_control_valve')
 outlet_valve = Valve.Valve(HydroElements.box3, 'outlet_valve')
 
 # sensors
-level1 = WaterLevelSensor.WaterLevelSensor(HydroElements.level, 'level1')
+overflow1 = WaterLevelSensor.WaterLevelSensor(HydroElements.overflow_level, 'overflow1')
+status_level1 = WaterLevelSensor.WaterLevelSensor(HydroElements.status_level, 'status_level1')
 
 # misc
 hydro_clock = Clock.Clock("clock")
